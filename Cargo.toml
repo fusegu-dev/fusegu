@@ -2,14 +2,70 @@
 name = "fusegu"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.87"
 license = "AGPL-3.0-only"
 repository = "https://github.com/fusegu-dev/fusegu"
 homepage = "https://fusegu.dev"
 
 [dependencies]
+# Web framework
+axum = { version = "0.8", features = ["http1", "http2", "json", "query", "form", "matched-path", "original-uri", "tracing", "macros"] }
+tokio = { version = "1.45", features = ["macros", "rt-multi-thread", "net", "time", "signal"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace", "timeout"] }
+
+# Database - Dual Database Architecture
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+clickhouse = { version = "0.13", features = ["time", "uuid"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.8", features = ["v4", "serde"] }
+
+# Configuration and environment
+dotenvy = "0.15"
+
+# Logging and observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Security and hashing (for fraud detection)
+sha2 = "0.10"
+argon2 = "0.5"
+
+# HTTP client (for external data sources if needed)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+[dev-dependencies]
+# Testing utilities
+tokio-test = "0.4"
+tempfile = "3.8"
+serial_test = "3.0"
 
 [profile.dev]
 debug = true
+opt-level = 0
+overflow-checks = true
 
 [profile.test]
+opt-level = 1
+debug = true
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+opt-level = 3
+strip = true
+
+# Ensure fast compilation in development
+[profile.dev.package."*"]
 opt-level = 1
