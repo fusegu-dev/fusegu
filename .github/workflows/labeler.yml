@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: read # for actions/labeler to determine modified files
       pull-requests: write # for actions/labeler to add labels to PRs
+      issues: write # for actions/labeler to create/sync labels
     runs-on: ubuntu-latest
     # Only run on PRs from forks or main repo (skip draft PRs to save resources)
     if: github.event.pull_request.draft == false
