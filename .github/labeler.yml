@@ -1,0 +1,53 @@
+api:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/api/**'
+    - 'src/endpoints/**'
+    - 'src/handlers/**'
+    - 'src/middleware/**'
+
+fraud-detection:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/scoring/**'
+    - 'src/engine/**'
+    - 'src/signals/**'
+
+database:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/database/**'
+    - 'src/storage/**'
+    - 'migrations/**'
+
+configuration:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/config/**'
+    - 'config/**'
+
+testing:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'tests/**'
+    - 'benches/**'
+
+documentation:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'docs/**'
+    - 'README.md'
+    - '**/*.md'
+
+dependencies:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'Cargo.toml'
+    - 'Cargo.lock'
+
+ci-cd:
+- changed-files:
+  - any-glob-to-any-file:
+    - '.github/**'
+    - 'Dockerfile'
+    - 'scripts/**'
