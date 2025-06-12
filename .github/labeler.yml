@@ -1,0 +1,77 @@
+# API layer
+'api':
+  - 'src/api/**/*'
+  - 'src/endpoints/**/*'
+  - 'src/handlers/**/*'
+  - 'src/middleware/**/*'
+
+# Core fraud detection
+'fraud-detection':
+  - 'src/scoring/**/*'
+  - 'src/engine/**/*'
+  - 'src/signals/**/*'
+
+# IP analysis and geolocation
+'ip-analysis':
+  - 'src/ip/**/*'
+  - 'src/geolocation/**/*'
+  - 'src/vpn/**/*'
+
+# Device and browser fingerprinting  
+'device-fingerprinting':
+  - 'src/device/**/*'
+  - 'src/fingerprint/**/*'
+
+# Email and domain analysis
+'email-analysis':
+  - 'src/email/**/*'
+  - 'src/domain/**/*'
+
+# Transaction analysis
+'transaction-analysis':
+  - 'src/transaction/**/*'
+  - 'src/velocity/**/*'
+  - 'src/patterns/**/*'
+
+# Machine learning (when added)
+'machine-learning':
+  - 'src/ml/**/*'
+  - 'src/models/**/*'
+
+# Data models and types
+'models':
+  - 'src/models/**/*'
+  - 'src/types/**/*'
+
+# Database and storage
+'database':
+  - 'src/database/**/*'
+  - 'src/storage/**/*'
+  - 'migrations/**/*'
+
+# Configuration
+'configuration':
+  - 'src/config/**/*'
+  - 'config/**/*'
+
+# Testing
+'testing':
+  - 'tests/**/*'
+  - 'benches/**/*'
+
+# Documentation  
+'documentation':
+  - 'docs/**/*'
+  - 'README.md'
+  - '**/*.md'
+
+# Dependencies
+'dependencies':
+  - 'Cargo.toml'
+  - 'Cargo.lock'
+
+# CI/CD
+'ci/cd':
+  - '.github/**/*'
+  - 'Dockerfile'
+  - 'scripts/**/*'
