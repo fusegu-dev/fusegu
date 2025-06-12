@@ -1,0 +1,65 @@
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+
+[licenses]
+# Allow common Rust ecosystem licenses + AGPL-3.0 for fusegu
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause", 
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+    # AGPL-3.0 licenses (both deprecated and current SPDX identifiers)
+    "AGPL-3.0",        # Deprecated identifier that cargo-deny sometimes reports
+    "AGPL-3.0-only",   # Current SPDX identifier used in Cargo.toml
+    "AGPL-3.0-or-later",  # In case we want "or later" version
+]
+exceptions = [
+    # Allow Unicode license for unicode handling crates
+    { allow = ["Unicode-3.0", "Unicode-DFS-2016"], crate = "unicode-ident" },
+    { allow = ["Unicode-3.0", "Unicode-DFS-2016"], crate = "unicode-normalization" },
+    { allow = ["Unicode-3.0", "Unicode-DFS-2016"], crate = "unicode-width" },
+]
+
+[bans]
+# Be more strict than Tokio since we're handling financial data
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+
+# Ban security-sensitive crates that have better alternatives
+deny = [
+    # Prefer rustls over openssl for better security
+    { crate = "openssl", use-instead = "rustls" },
+    { crate = "openssl-sys", use-instead = "rustls" },
+    
+    # Ban old/insecure crypto crates
+    { crate = "md5", use-instead = "sha2" },
+    { crate = "sha1", use-instead = "sha2" },
+    
+    # Ban old HTTP clients with security issues
+    { crate = "hyper", version = "< 0.14", use-instead = "hyper 0.14+" },
+    
+    # Ban old serialization crates with security issues
+    { crate = "serde_json", version = "< 1.0.40", use-instead = "serde_json 1.0.40+" },
+]
+
+# Skip certain crates from duplicate version checking if needed
+skip = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
