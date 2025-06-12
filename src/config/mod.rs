@@ -1,40 +1,63 @@
 //! Configuration management
 
+/// Main application configuration
 #[derive(Debug, Clone)]
 pub struct Config {
+    /// Server configuration
     pub server: ServerConfig,
+    /// Database configuration
     pub database: DatabaseConfig,
+    /// Authentication configuration
     pub auth: AuthConfig,
+    /// CORS configuration
     pub cors: CorsConfig,
 }
 
+/// HTTP server configuration
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
+    /// Server bind address
     pub host: String,
+    /// Server port
     pub port: u16,
+    /// Environment (development/production)
     pub environment: String,
+    /// Request timeout in seconds
     pub request_timeout_seconds: u64,
+    /// Maximum request size in bytes
     pub max_request_size: usize,
 }
 
+/// Database connection configuration
 #[derive(Debug, Clone)]
 pub struct DatabaseConfig {
+    /// PostgreSQL connection URL
     pub postgres_url: String,
+    /// PostgreSQL max connections
     pub postgres_max_connections: u32,
+    /// ClickHouse connection URL
     pub clickhouse_url: String,
+    /// ClickHouse username
     pub clickhouse_user: String,
+    /// ClickHouse password
     pub clickhouse_password: String,
+    /// ClickHouse database name
     pub clickhouse_database: String,
 }
 
+/// Authentication configuration
 #[derive(Debug, Clone)]
 pub struct AuthConfig {
+    /// JWT secret key
     pub jwt_secret: String,
+    /// API key header name
     pub api_key_header: String,
 }
 
+/// CORS configuration
 #[derive(Debug, Clone)]
 pub struct CorsConfig {
+    /// Allowed origins
     pub origins: Vec<String>,
 }
 

@@ -15,31 +15,42 @@ pub type ApiResult<T> = Result<T, ApiError>;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorCode {
+    /// Bad request from client
     BadRequest,
+    /// Authentication required
     Unauthorized,
+    /// Resource not found
     NotFound,
+    /// Validation failed
     ValidationError,
+    /// Internal server error
     InternalError,
 }
 
 /// API error types
 #[derive(Error, Debug)]
 pub enum ApiError {
+    /// Internal server error
     #[error("Internal server error")]
     Internal(#[from] anyhow::Error),
 
+    /// Invalid JSON in request
     #[error("Invalid JSON: {0}")]
     InvalidJson(#[from] serde_json::Error),
 
+    /// Bad request with details
     #[error("Bad request: {0}")]
     BadRequest(String),
 
+    /// Resource not found
     #[error("Not found")]
     NotFound,
 
+    /// Authentication required
     #[error("Unauthorized")]
     Unauthorized,
 
+    /// Validation error with details
     #[error("Validation error: {0}")]
     Validation(String),
 }
@@ -47,7 +58,9 @@ pub enum ApiError {
 /// Error response structure
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
+    /// Machine-readable error code
     pub error: ErrorCode,
+    /// Human-readable error message
     pub message: String,
 }
 
