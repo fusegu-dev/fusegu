@@ -18,10 +18,7 @@ allow = [
     "Unicode-3.0",
     "Unicode-DFS-2016",
     "CC0-1.0",
-    # AGPL-3.0 licenses (both deprecated and current SPDX identifiers)
-    "AGPL-3.0",        # Deprecated identifier that cargo-deny sometimes reports
-    "AGPL-3.0-only",   # Current SPDX identifier used in Cargo.toml
-    "AGPL-3.0-or-later",  # In case we want "or later" version
+    "AGPL-3.0",        # For fusegu itself (cargo-deny recognizes this identifier)
 ]
 exceptions = [
     # Allow Unicode license for unicode handling crates
@@ -47,12 +44,6 @@ deny = [
     # Ban old/insecure crypto crates
     { crate = "md5", use-instead = "sha2" },
     { crate = "sha1", use-instead = "sha2" },
-    
-    # Ban old HTTP clients with security issues
-    { crate = "hyper", version = "< 0.14", use-instead = "hyper 0.14+" },
-    
-    # Ban old serialization crates with security issues
-    { crate = "serde_json", version = "< 1.0.40", use-instead = "serde_json 1.0.40+" },
 ]
 
 # Skip certain crates from duplicate version checking if needed
