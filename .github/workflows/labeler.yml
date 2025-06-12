@@ -22,7 +22,7 @@ jobs:
     if: github.event.pull_request.draft == false
     steps:
       - name: Apply labels
-        uses: actions/labeler@v5
+        uses: actions/labeler@v4
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           sync-labels: true

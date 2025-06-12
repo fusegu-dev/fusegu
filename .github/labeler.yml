@@ -1,94 +1,37 @@
-# .github/labeler.yml
-# Configuration for actions/labeler@v5
-
 api:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/api/**'
-    - 'src/endpoints/**'
-    - 'src/handlers/**'
-    - 'src/middleware/**'
+- 'src/api/**'
+- 'src/endpoints/**'
+- 'src/handlers/**'
+- 'src/middleware/**'
 
 fraud-detection:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/scoring/**'
-    - 'src/engine/**'
-    - 'src/signals/**'
-
-ip-analysis:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/ip/**'
-    - 'src/geolocation/**'
-    - 'src/vpn/**'
-
-device-fingerprinting:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/device/**'
-    - 'src/fingerprint/**'
-
-email-analysis:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/email/**'
-    - 'src/domain/**'
-
-transaction-analysis:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/transaction/**'
-    - 'src/velocity/**'
-    - 'src/patterns/**'
-
-machine-learning:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/ml/**'
-    - 'src/models/**'
-
-models:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/models/**'
-    - 'src/types/**'
+- 'src/scoring/**'
+- 'src/engine/**'
+- 'src/signals/**'
 
 database:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/database/**'
-    - 'src/storage/**'
-    - 'migrations/**'
+- 'src/database/**'
+- 'src/storage/**'
+- 'migrations/**'
 
 configuration:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'src/config/**'
-    - 'config/**'
+- 'src/config/**'
+- 'config/**'
 
 testing:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'tests/**'
-    - 'benches/**'
+- 'tests/**'
+- 'benches/**'
 
 documentation:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'docs/**'
-    - 'README.md'
-    - '**/*.md'
+- 'docs/**'
+- 'README.md'
+- '**/*.md'
 
 dependencies:
-- changed-files:
-  - any-glob-to-any-file:
-    - 'Cargo.toml'
-    - 'Cargo.lock'
+- 'Cargo.toml'
+- 'Cargo.lock'
 
 ci-cd:
-- changed-files:
-  - any-glob-to-any-file:
-    - '.github/**'
-    - 'Dockerfile'
-    - 'scripts/**'
+- '.github/**'
+- 'Dockerfile'
+- 'scripts/**'
