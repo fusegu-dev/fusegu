@@ -14,13 +14,9 @@ tokio = { version = "1.45", features = ["macros", "rt-multi-thread", "net", "tim
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace", "timeout"] }
 
-# Database - Dual Database Architecture
-clickhouse = { version = "0.13", features = ["time", "uuid"] }
-
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-uuid = { version = "1.8", features = ["v4", "serde"] }
 
 # Configuration and environment
 dotenvy = "0.15"
@@ -36,18 +32,10 @@ thiserror = "2.0"
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
-# Security and hashing (for fraud detection)
-sha2 = "0.10"
-argon2 = "0.5"
 
-# HTTP client (for external data sources if needed)
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
 [dev-dependencies]
 # Testing utilities
-tokio-test = "0.4"
-tempfile = "3.8"
-serial_test = "3.0"
 
 [profile.dev]
 debug = true

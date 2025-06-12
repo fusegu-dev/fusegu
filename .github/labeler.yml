@@ -1,37 +1,7 @@
-api:
-- 'src/api/**'
-- 'src/endpoints/**'
-- 'src/handlers/**'
-- 'src/middleware/**'
-
-fraud-detection:
-- 'src/scoring/**'
-- 'src/engine/**'
-- 'src/signals/**'
-
-database:
-- 'src/database/**'
-- 'src/storage/**'
-- 'migrations/**'
-
-configuration:
-- 'src/config/**'
-- 'config/**'
-
-testing:
-- 'tests/**'
-- 'benches/**'
-
-documentation:
-- 'docs/**'
-- 'README.md'
-- '**/*.md'
-
-dependencies:
-- 'Cargo.toml'
-- 'Cargo.lock'
-
-ci-cd:
-- '.github/**'
-- 'Dockerfile'
-- 'scripts/**'
+api: ['src/api/**', 'src/endpoints/**', 'src/handlers/**', 'src/middleware/**']
+database: ['src/database/**', 'src/storage/**', 'migrations/**']
+configuration: ['src/config/**', 'config/**']
+testing: ['tests/**', 'benches/**']
+documentation: ['docs/**', 'README.md', '**/*.md']
+dependencies: ['Cargo.toml', 'Cargo.lock']
+ci-cd: ['.github/**', 'Dockerfile', 'scripts/**']
