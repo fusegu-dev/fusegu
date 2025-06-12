@@ -1,77 +1,53 @@
-# API layer
-'api':
-  - 'src/api/**/*'
-  - 'src/endpoints/**/*'
-  - 'src/handlers/**/*'
-  - 'src/middleware/**/*'
+api:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/api/**'
+    - 'src/endpoints/**'
+    - 'src/handlers/**'
+    - 'src/middleware/**'
 
-# Core fraud detection
-'fraud-detection':
-  - 'src/scoring/**/*'
-  - 'src/engine/**/*'
-  - 'src/signals/**/*'
+fraud-detection:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/scoring/**'
+    - 'src/engine/**'
+    - 'src/signals/**'
 
-# IP analysis and geolocation
-'ip-analysis':
-  - 'src/ip/**/*'
-  - 'src/geolocation/**/*'
-  - 'src/vpn/**/*'
+database:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/database/**'
+    - 'src/storage/**'
+    - 'migrations/**'
 
-# Device and browser fingerprinting  
-'device-fingerprinting':
-  - 'src/device/**/*'
-  - 'src/fingerprint/**/*'
+configuration:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'src/config/**'
+    - 'config/**'
 
-# Email and domain analysis
-'email-analysis':
-  - 'src/email/**/*'
-  - 'src/domain/**/*'
+testing:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'tests/**'
+    - 'benches/**'
 
-# Transaction analysis
-'transaction-analysis':
-  - 'src/transaction/**/*'
-  - 'src/velocity/**/*'
-  - 'src/patterns/**/*'
+documentation:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'docs/**'
+    - 'README.md'
+    - '**/*.md'
 
-# Machine learning (when added)
-'machine-learning':
-  - 'src/ml/**/*'
-  - 'src/models/**/*'
+dependencies:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'Cargo.toml'
+    - 'Cargo.lock'
 
-# Data models and types
-'models':
-  - 'src/models/**/*'
-  - 'src/types/**/*'
-
-# Database and storage
-'database':
-  - 'src/database/**/*'
-  - 'src/storage/**/*'
-  - 'migrations/**/*'
-
-# Configuration
-'configuration':
-  - 'src/config/**/*'
-  - 'config/**/*'
-
-# Testing
-'testing':
-  - 'tests/**/*'
-  - 'benches/**/*'
-
-# Documentation  
-'documentation':
-  - 'docs/**/*'
-  - 'README.md'
-  - '**/*.md'
-
-# Dependencies
-'dependencies':
-  - 'Cargo.toml'
-  - 'Cargo.lock'
-
-# CI/CD
-'ci/cd':
-  - '.github/**/*'
-  - 'Dockerfile'
-  - 'scripts/**/*'
+ci-cd:
+- changed-files:
+  - any-glob-to-any-file:
+    - '.github/**'
+    - 'Dockerfile'
+    - 'scripts/**'
