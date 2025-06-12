@@ -1,80 +1,108 @@
 # .github/labeler.yml
-# For use with actions/labeler@v4
+# Configuration for actions/labeler@v5
 
 # API layer
 api:
-- 'src/api/**'
-- 'src/endpoints/**'
-- 'src/handlers/**'
-- 'src/middleware/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/api/**'
+      - 'src/endpoints/**'
+      - 'src/handlers/**'
+      - 'src/middleware/**'
 
 # Core fraud detection
 fraud-detection:
-- 'src/scoring/**'
-- 'src/engine/**'
-- 'src/signals/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/scoring/**'
+      - 'src/engine/**'
+      - 'src/signals/**'
 
 # IP analysis and geolocation
 ip-analysis:
-- 'src/ip/**'
-- 'src/geolocation/**'
-- 'src/vpn/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/ip/**'
+      - 'src/geolocation/**'
+      - 'src/vpn/**'
 
 # Device and browser fingerprinting
 device-fingerprinting:
-- 'src/device/**'
-- 'src/fingerprint/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/device/**'
+      - 'src/fingerprint/**'
 
 # Email and domain analysis
 email-analysis:
-- 'src/email/**'
-- 'src/domain/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/email/**'
+      - 'src/domain/**'
 
 # Transaction analysis
 transaction-analysis:
-- 'src/transaction/**'
-- 'src/velocity/**'
-- 'src/patterns/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/transaction/**'
+      - 'src/velocity/**'
+      - 'src/patterns/**'
 
 # Machine learning (when added)
 machine-learning:
-- 'src/ml/**'
-- 'src/models/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/ml/**'
+      - 'src/models/**'
 
 # Data models and types
 models:
-- 'src/models/**'
-- 'src/types/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/models/**'
+      - 'src/types/**'
 
 # Database and storage
 database:
-- 'src/database/**'
-- 'src/storage/**'
-- 'migrations/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/database/**'
+      - 'src/storage/**'
+      - 'migrations/**'
 
 # Configuration
 configuration:
-- 'src/config/**'
-- 'config/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/config/**'
+      - 'config/**'
 
 # Testing
 testing:
-- 'tests/**'
-- 'benches/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/**'
+      - 'benches/**'
 
 # Documentation
 documentation:
-- 'docs/**'
-- 'README.md'
-- '**/*.md'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'docs/**'
+      - 'README.md'
+      - '**/*.md'
 
 # Dependencies
 dependencies:
-- 'Cargo.toml'
-- 'Cargo.lock'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
 
 # CI/CD
 ci-cd:
-- '.github/**'
-- 'Dockerfile'
-- 'scripts/**'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**'
+      - 'Dockerfile'
+      - 'scripts/**'
