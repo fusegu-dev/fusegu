@@ -19,6 +19,7 @@ allow = [
     "Unicode-DFS-2016",
     "CC0-1.0",
     "AGPL-3.0",        # For fusegu itself (cargo-deny recognizes this identifier)
+    "Zlib",            # zlib License - OSI approved, FSF Free/Libre
 ]
 exceptions = [
     # Allow Unicode license for unicode handling crates
