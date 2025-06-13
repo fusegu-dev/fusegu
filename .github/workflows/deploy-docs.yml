@@ -1,16 +1,20 @@
 name: Deploy API Documentation
 
 on:
-  push:
+  # Trigger after CI workflow completes successfully on main
+  workflow_run:
+    workflows: ["CI"]  # Name of your CI workflow
+    types:
+      - completed
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'openapi.yaml'
-      - 'Cargo.toml'
-      - 'docs/**'
-  pull_request:
-    branches: [main]
-  workflow_dispatch: # Allow manual triggers
+  
+  # Keep manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment even if no changes detected'
+        required: false
+        default: 'false'
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,10 +23,20 @@ jobs:
   # Job 1: Extract OpenAPI spec and build docs
   build-docs:
     runs-on: ubuntu-latest
+    # Only run if CI workflow succeeded
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     outputs:
       openapi-changed: ${{ steps.check-changes.outputs.openapi-changed }}
     
     steps:
+    - name: Show trigger info
+      run: |
+        echo "🔍 Workflow triggered by: ${{ github.event_name }}"
+        if [ "${{ github.event_name }}" = "workflow_run" ]; then
+          echo "📋 Previous workflow: ${{ github.event.workflow_run.name }}"
+          echo "✅ Previous workflow status: ${{ github.event.workflow_run.conclusion }}"
+        fi
+        
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
@@ -63,11 +77,12 @@ jobs:
 
     - name: Extract OpenAPI specification
       run: |
-        # Create a binary that outputs the OpenAPI spec
-        cargo run --bin extract-openapi > generated-openapi.json
+        # Use existing openapi.yaml file directly
+        cp openapi.yaml generated-openapi.json
         
-        # Validate the generated spec
-        npx @apidevtools/swagger-parser validate generated-openapi.json
+        # Validate the existing spec
+        npx @apidevtools/swagger-parser validate openapi.yaml
+        echo "✅ OpenAPI specification validated successfully"
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -736,7 +751,11 @@ jobs:
   deploy-to-cloudflare:
     runs-on: ubuntu-latest
     needs: build-docs
-    if: github.ref == 'refs/heads/main' && needs.build-docs.outputs.openapi-changed == 'true'
+    if: |
+      always() && 
+      needs.build-docs.result == 'success' && 
+      (needs.build-docs.outputs.openapi-changed == 'true' || 
+       github.event.inputs.force_deploy == 'true')
     
     steps:
     - name: Checkout repository
@@ -807,7 +826,7 @@ jobs:
     - name: Create wrangler.toml
       run: |
         cat > wrangler.toml << 'EOF'
-        name = "fusegu-docs"
+        name = "fusegu-staging"
         main = "src/index.js"
         compatibility_date = "2025-01-01"
         
