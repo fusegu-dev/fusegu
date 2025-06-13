@@ -6,24 +6,31 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use thiserror::Error;
+use utoipa::ToSchema;
 
 /// API result type alias
 pub type ApiResult<T> = Result<T, ApiError>;
 
 /// Error codes for machine-readable responses
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
+#[schema(
+    title = "ErrorCode",
+    description = "Machine-readable error codes for API responses",
+    example = "bad_request"
+)]
 pub enum ErrorCode {
-    /// Bad request from client
+    /// Bad request from client - Invalid request parameters or format
     BadRequest,
-    /// Authentication required
+    /// Authentication required - Authentication credentials required
     Unauthorized,
-    /// Resource not found
+    /// Resource not found - Requested resource does not exist
     NotFound,
-    /// Validation failed
+    /// Validation failed - Request validation failed
     ValidationError,
-    /// Internal server error
+    /// Internal server error - Unexpected server error occurred
     InternalError,
 }
 
@@ -56,11 +63,21 @@ pub enum ApiError {
 }
 
 /// Error response structure
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
+#[schema(
+    title = "ErrorResponse",
+    description = "Standard error response format",
+    example = json!({
+        "error": "bad_request",
+        "message": "Invalid request parameters"
+    })
+)]
 pub struct ErrorResponse {
     /// Machine-readable error code
+    #[schema(example = "bad_request")]
     pub error: ErrorCode,
     /// Human-readable error message
+    #[schema(example = "Invalid request parameters")]
     pub message: String,
 }
 

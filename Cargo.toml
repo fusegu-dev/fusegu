@@ -32,6 +32,11 @@ thiserror = "2.0"
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
+# OpenAPI documentation
+utoipa = { version = "5.3", features = ["axum_extras", "chrono"] }
+utoipa-swagger-ui = { version = "8.0", features = ["axum"] }
+utoipa-redoc = { version = "4.0", features = ["axum"] }
+
 
 
 [dev-dependencies]

@@ -1,0 +1,188 @@
+openapi: 3.1.0
+info:
+  title: fusegu
+  description: fusegu API
+  version: 0.1.0
+  contact:
+    name: fusegu.dev
+    url: https://fusegu.dev
+    email: opensource@fusegu.dev
+  license:
+    name: AGPL-3.0
+    url: https://github.com/fusegu-dev/fusegu/blob/main/LICENSE
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://fusegu.io
+    description: Production Demo server
+
+tags:
+  - name: Health
+    description: Service health monitoring endpoints
+    externalDocs:
+      description: Health Check Best Practices
+      url: https://microservices.io/patterns/observability/health-check-api.html
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health Check
+      description: |
+        Returns the current health status of the Fusegu API service. 
+        
+        This endpoint is designed for use by:
+        - Load balancers for routing decisions
+        - Monitoring systems for alerting
+        - Orchestration platforms for service management
+        - Development and testing environments
+        
+        The endpoint performs basic connectivity and service availability checks.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy and operational
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: Healthy service response
+                  value:
+                    status: "healthy"
+                    timestamp: "2025-01-21T10:00:00Z"
+        '500':
+          description: Service is experiencing issues
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unhealthy:
+                  summary: Service error response
+                  value:
+                    error: "internal_error"
+                    message: "Service temporarily unavailable"
+  
+  /v1/health:
+    get:
+      tags:
+        - Health
+      summary: Health Check (API v1)
+      description: |
+        Versioned health check endpoint for API v1.
+        
+        This endpoint provides the same functionality as `/health` but is versioned
+        for API compatibility and future enhancements.
+      operationId: healthCheckV1
+      responses:
+        '200':
+          description: Service is healthy and operational
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '500':
+          description: Service is experiencing issues
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      title: HealthResponse
+      description: Health check endpoint response
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          description: Current health status of the service
+          example: "healthy"
+          enum:
+            - "healthy"
+            - "degraded"
+            - "unhealthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: UTC timestamp when the health check was performed
+          example: "2025-01-21T10:00:00Z"
+      example:
+        status: "healthy"
+        timestamp: "2025-01-21T10:00:00Z"
+    
+    ErrorResponse:
+      type: object
+      title: ErrorResponse
+      description: Standard error response format
+      required:
+        - error
+        - message
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid request parameters"
+      example:
+        error: "bad_request"
+        message: "Invalid request parameters"
+    
+    ErrorCode:
+      type: string
+      title: ErrorCode
+      description: Machine-readable error codes for API responses
+      enum:
+        - "bad_request"
+        - "unauthorized"
+        - "not_found"
+        - "validation_error"
+        - "internal_error"
+      example: "bad_request"
+
+  responses:
+    HealthyResponse:
+      description: Service is healthy and operational
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HealthResponse'
+    
+    ErrorResponse:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "internal_error"
+            message: "Service temporarily unavailable"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication (future implementation)
+
+security: []
+
+externalDocs:
+  description: Fusegu Documentation
+  url: https://fusegu.dev/docs/backend/

@@ -11,8 +11,46 @@ use axum::{
 use std::time::Duration;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer};
+use utoipa::OpenApi;
 
 use crate::{api::health::health_check, config::Config};
+
+/// OpenAPI documentation for Fusegu API
+#[derive(OpenApi)]
+#[openapi(
+    info(
+        title = "Fusegu API",
+        version = "0.1.0",
+        description = "Professional REST API built with Rust, Axum, and OpenAPI-first development practices",
+        contact(
+            name = "fusegu.dev",
+            url = "https://fusegu.dev",
+            email = "opensource@fusegu.dev"
+        ),
+        license(
+            name = "AGPL-3.0",
+            url = "https://www.gnu.org/licenses/agpl-3.0.html"
+        )
+    ),
+         servers(
+         (url = "http://localhost:8080", description = "Local development server"),
+         (url = "https://fusegu.io", description = "Production Demo server")
+     ),
+    paths(
+        crate::api::health::health_check
+    ),
+    components(
+        schemas(
+            crate::models::HealthResponse,
+            crate::api::errors::ErrorResponse,
+            crate::api::errors::ErrorCode
+        )
+    ),
+    tags(
+        (name = "Health", description = "Service health monitoring endpoints")
+    )
+)]
+pub struct ApiDoc;
 
 /// Create the main application with routes and middleware
 pub async fn create_app(config: Config) -> anyhow::Result<Router> {
@@ -36,6 +74,8 @@ pub async fn create_app(config: Config) -> anyhow::Result<Router> {
         .nest("/v1", api_v1_routes())
         // Root endpoint
         .route("/", get(root_handler))
+        // OpenAPI JSON endpoint
+        .route("/openapi.json", get(serve_openapi))
         // Add shared state
         .with_state(config.clone())
         // Middleware stack for browser frontend
@@ -60,6 +100,11 @@ pub async fn create_app(config: Config) -> anyhow::Result<Router> {
 fn api_v1_routes() -> Router<Config> {
     Router::new().route("/health", get(health_check))
     // Future API endpoints will be added here
+}
+
+/// Serve OpenAPI specification as JSON
+async fn serve_openapi() -> axum::Json<utoipa::openapi::OpenApi> {
+    axum::Json(ApiDoc::openapi())
 }
 
 /// Root handler
