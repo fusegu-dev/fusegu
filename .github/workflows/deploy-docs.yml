@@ -1,0 +1,847 @@
+name: Deploy API Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'openapi.yaml'
+      - 'Cargo.toml'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Allow manual triggers
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Job 1: Extract OpenAPI spec and build docs
+  build-docs:
+    runs-on: ubuntu-latest
+    outputs:
+      openapi-changed: ${{ steps.check-changes.outputs.openapi-changed }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2 # Need previous commit for change detection
+
+    - name: Check for OpenAPI changes
+      id: check-changes
+      run: |
+        if git diff --name-only HEAD~1 HEAD | grep -E "(src/|openapi\.yaml|Cargo\.toml)"; then
+          echo "openapi-changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "openapi-changed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+
+    - name: Build project
+      run: cargo build --release
+
+    - name: Extract OpenAPI specification
+      run: |
+        # Create a binary that outputs the OpenAPI spec
+        cargo run --bin extract-openapi > generated-openapi.json
+        
+        # Validate the generated spec
+        npx @apidevtools/swagger-parser validate generated-openapi.json
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    - name: Install documentation tools
+      run: |
+        npm install -g @redocly/cli
+        npm install -g swagger-ui-dist
+        npm install -g @openapitools/openapi-generator-cli
+
+    - name: Generate documentation structure
+      run: |
+        mkdir -p docs-output/{swagger,redoc,spec,clients}
+        
+        # Copy OpenAPI spec
+        cp generated-openapi.json docs-output/spec/openapi.json
+        cp openapi.yaml docs-output/spec/openapi.yaml
+
+    - name: Create futuristic landing page
+      run: |
+        cat > docs-output/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>fusegu.dev</title>
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+
+                body {
+                    font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+                    background: #0a0a0a;
+                    color: #00ff88;
+                    overflow: hidden;
+                    height: 100vh;
+                    position: relative;
+                }
+
+                .matrix-bg {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+                    z-index: -2;
+                }
+
+                .grid {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-image: 
+                        linear-gradient(rgba(0, 255, 136, 0.1) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
+                    background-size: 50px 50px;
+                    animation: grid-move 20s linear infinite;
+                    z-index: -1;
+                }
+
+                @keyframes grid-move {
+                    0% { transform: translate(0, 0); }
+                    100% { transform: translate(50px, 50px); }
+                }
+
+                .container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    padding: 20px;
+                    text-align: center;
+                    position: relative;
+                    z-index: 10;
+                }
+
+                .logo {
+                    font-size: clamp(2.5rem, 8vw, 4rem);
+                    font-weight: 900;
+                    margin-bottom: 20px;
+                    text-shadow: 0 0 20px #00ff88;
+                    letter-spacing: 3px;
+                    position: relative;
+                }
+
+                .logo::before {
+                    content: '> ';
+                    color: #ff0088;
+                    animation: cursor-blink 1.5s infinite;
+                }
+
+                .logo::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 136, 0.3) 50%, transparent 100%);
+                    animation: scan-text 3s ease-in-out infinite;
+                    pointer-events: none;
+                }
+
+                @keyframes scan-text {
+                    0%, 100% { transform: translateX(-100%); opacity: 0; }
+                    50% { transform: translateX(100%); opacity: 1; }
+                }
+
+                .tagline {
+                    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+                    opacity: 0.8;
+                    margin-bottom: 50px;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                }
+
+                .nav-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 20px;
+                    max-width: 800px;
+                    width: 100%;
+                    margin-bottom: 40px;
+                }
+
+                .nav-link {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 20px;
+                    background: rgba(0, 255, 136, 0.05);
+                    border: 1px solid rgba(0, 255, 136, 0.3);
+                    border-radius: 8px;
+                    color: #00ff88;
+                    text-decoration: none;
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    letter-spacing: 1px;
+                    transition: all 0.3s ease;
+                    position: relative;
+                    overflow: hidden;
+                    backdrop-filter: blur(10px);
+                }
+
+                .nav-link::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 1px;
+                    background: linear-gradient(90deg, transparent, #00ff88, transparent);
+                    transition: left 0.5s ease;
+                }
+
+                .nav-link:hover::before {
+                    left: 100%;
+                }
+
+                .nav-link:hover {
+                    transform: translateY(-3px);
+                    background: rgba(0, 255, 136, 0.1);
+                    border-color: #00ff88;
+                    box-shadow: 
+                        0 10px 30px rgba(0, 255, 136, 0.2),
+                        inset 0 1px 0 rgba(0, 255, 136, 0.3);
+                }
+
+                .nav-icon {
+                    font-size: 1.8rem;
+                    opacity: 0.8;
+                }
+
+                .nav-title {
+                    font-weight: 600;
+                    text-transform: uppercase;
+                }
+
+                .nav-desc {
+                    font-size: 0.75rem;
+                    opacity: 0.6;
+                    text-align: center;
+                    line-height: 1.3;
+                }
+
+                .github-link {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 15px;
+                    padding: 12px 25px;
+                    background: rgba(255, 0, 136, 0.1);
+                    border: 2px solid #ff0088;
+                    border-radius: 8px;
+                    color: #ff0088;
+                    text-decoration: none;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    letter-spacing: 1px;
+                    transition: all 0.3s ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .github-link::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255, 0, 136, 0.4), transparent);
+                    transition: left 0.5s ease;
+                }
+
+                .github-link:hover::before {
+                    left: 100%;
+                }
+
+                .github-link:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 
+                        0 10px 30px rgba(255, 0, 136, 0.3),
+                        0 0 20px rgba(255, 0, 136, 0.5);
+                    background: rgba(255, 0, 136, 0.2);
+                }
+
+                .github-icon {
+                    width: 20px;
+                    height: 20px;
+                    fill: currentColor;
+                }
+
+                .particles {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    pointer-events: none;
+                    z-index: 1;
+                }
+
+                .particle {
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: #00ff88;
+                    border-radius: 50%;
+                    opacity: 0.7;
+                    animation: float 6s linear infinite;
+                }
+
+                @keyframes float {
+                    0% {
+                        transform: translateY(100vh) translateX(0);
+                        opacity: 0;
+                    }
+                    10% {
+                        opacity: 0.7;
+                    }
+                    90% {
+                        opacity: 0.7;
+                    }
+                    100% {
+                        transform: translateY(-10px) translateX(100px);
+                        opacity: 0;
+                    }
+                }
+
+                .scanning-line {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 2px;
+                    background: linear-gradient(90deg, transparent, #00ff88, transparent);
+                    animation: scan 4s ease-in-out infinite;
+                    z-index: 5;
+                }
+
+                @keyframes scan {
+                    0%, 100% { transform: translateY(-2px); opacity: 0; }
+                    50% { transform: translateY(50vh); opacity: 1; }
+                }
+
+                @keyframes cursor-blink {
+                    0%, 50% { opacity: 1; }
+                    51%, 100% { opacity: 0.3; }
+                }
+
+                .terminal-prefix {
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    font-size: 0.8rem;
+                    opacity: 0.6;
+                    z-index: 15;
+                }
+
+                .version-info {
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    font-size: 0.7rem;
+                    opacity: 0.4;
+                    z-index: 15;
+                }
+
+                /* Mobile optimizations */
+                @media (max-width: 768px) {
+                    .container {
+                        padding: 15px;
+                    }
+                    
+                    .nav-grid {
+                        grid-template-columns: 1fr;
+                        gap: 15px;
+                        max-width: 400px;
+                    }
+                    
+                    .nav-link {
+                        padding: 15px;
+                    }
+                    
+                    .tagline {
+                        margin-bottom: 30px;
+                    }
+                    
+                    .terminal-prefix,
+                    .version-info {
+                        font-size: 0.6rem;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .nav-link {
+                        padding: 12px;
+                    }
+                    
+                    .github-link {
+                        padding: 10px 20px;
+                        gap: 10px;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="matrix-bg"></div>
+            <div class="grid"></div>
+            <div class="scanning-line"></div>
+            <div class="particles" id="particles"></div>
+            
+            <div class="terminal-prefix">user@fusegu:~$</div>
+            <div class="version-info">{{ VERSION }}</div>
+            
+            <div class="container">
+                <h1 class="logo">FUSEGU</h1>
+                <p class="tagline">System initializing...</p>
+                
+                <div class="nav-grid">
+                    <a href="/swagger/" class="nav-link">
+                        <div class="nav-icon">⚡</div>
+                        <div class="nav-title">Interface</div>
+                        <div class="nav-desc">Interactive API explorer</div>
+                    </a>
+                    
+                    <a href="/redoc/" class="nav-link">
+                        <div class="nav-icon">📋</div>
+                        <div class="nav-title">Documentation</div>
+                        <div class="nav-desc">Technical specifications</div>
+                    </a>
+                    
+                    <a href="/clients/" class="nav-link">
+                        <div class="nav-icon">🔧</div>
+                        <div class="nav-title">SDKs</div>
+                        <div class="nav-desc">Client libraries</div>
+                    </a>
+                    
+                    <a href="/spec/openapi.json" class="nav-link">
+                        <div class="nav-icon">💾</div>
+                        <div class="nav-title">Schema</div>
+                        <div class="nav-desc">OpenAPI specification</div>
+                    </a>
+                </div>
+                
+                <a href="https://github.com/fusegu-dev/fusegu" class="github-link" target="_blank" rel="noopener noreferrer">
+                    <svg class="github-icon" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    <span>Source Code</span>
+                </a>
+            </div>
+
+            <script>
+                // Create floating particles
+                function createParticles() {
+                    const particlesContainer = document.getElementById('particles');
+                    const particleCount = window.innerWidth < 768 ? 20 : 50;
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        const particle = document.createElement('div');
+                        particle.className = 'particle';
+                        particle.style.left = Math.random() * 100 + '%';
+                        particle.style.animationDelay = Math.random() * 6 + 's';
+                        particle.style.animationDuration = (3 + Math.random() * 3) + 's';
+                        particlesContainer.appendChild(particle);
+                    }
+                }
+
+                // Terminal cursor effect
+                function addCursorEffect() {
+                    const tagline = document.querySelector('.tagline');
+                    const text = 'System initializing...';
+                    tagline.textContent = '';
+                    
+                    let i = 0;
+                    function typeWriter() {
+                        if (i < text.length) {
+                            tagline.textContent += text.charAt(i);
+                            i++;
+                            setTimeout(typeWriter, 80);
+                        } else {
+                            // Add blinking cursor
+                            const cursor = document.createElement('span');
+                            cursor.textContent = '_';
+                            cursor.style.animation = 'blink 1s infinite';
+                            tagline.appendChild(cursor);
+                        }
+                    }
+                    
+                    // Add blink animation
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes blink {
+                            0%, 50% { opacity: 1; }
+                            51%, 100% { opacity: 0; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    setTimeout(typeWriter, 1500);
+                }
+
+                // Glitch effect for logo
+                function addGlitchEffect() {
+                    const logo = document.querySelector('.logo');
+                    setInterval(() => {
+                        if (Math.random() < 0.1) {
+                            logo.style.textShadow = `
+                                ${Math.random() * 10 - 5}px 0 #ff0088,
+                                ${Math.random() * 10 - 5}px 0 #00ff88
+                            `;
+                            setTimeout(() => {
+                                logo.style.textShadow = '0 0 20px #00ff88';
+                            }, 50);
+                        }
+                    }, 2000);
+                }
+
+                // Random nav link pulse
+                function addNavPulse() {
+                    const navLinks = document.querySelectorAll('.nav-link');
+                    setInterval(() => {
+                        const randomLink = navLinks[Math.floor(Math.random() * navLinks.length)];
+                        randomLink.style.borderColor = '#00ff88';
+                        randomLink.style.boxShadow = '0 0 15px rgba(0, 255, 136, 0.5)';
+                        setTimeout(() => {
+                            randomLink.style.borderColor = 'rgba(0, 255, 136, 0.3)';
+                            randomLink.style.boxShadow = 'none';
+                        }, 200);
+                    }, 5000);
+                }
+
+                // Initialize effects
+                document.addEventListener('DOMContentLoaded', function() {
+                    createParticles();
+                    addCursorEffect();
+                    addGlitchEffect();
+                    addNavPulse();
+                });
+
+                // Responsive particle adjustment
+                window.addEventListener('resize', function() {
+                    const particlesContainer = document.getElementById('particles');
+                    particlesContainer.innerHTML = '';
+                    createParticles();
+                });
+            </script>
+        </body>
+        </html>
+        EOF
+        
+        # Replace version placeholder
+        sed -i "s/{{ VERSION }}/v$(cargo pkgid | cut -d# -f2)/g" docs-output/index.html
+
+    - name: Generate Swagger UI
+      run: |
+        # Copy Swagger UI files
+        cp -r $(npm root -g)/swagger-ui-dist/* docs-output/swagger/
+        
+        # Configure Swagger UI
+        cat > docs-output/swagger/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <title>Fusegu API - Interactive Explorer</title>
+          <link rel="stylesheet" type="text/css" href="./swagger-ui-bundle.css" />
+          <link rel="stylesheet" type="text/css" href="./swagger-ui-standalone-preset.css" />
+          <style>
+            html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+            *, *:before, *:after { box-sizing: inherit; }
+            body { margin:0; background: #0a0a0a; }
+            .swagger-ui .topbar { display: none; }
+            .swagger-ui { font-family: 'Monaco', 'Consolas', 'Courier New', monospace; }
+            .swagger-ui .info .title { color: #00ff88; font-size: 2rem; }
+          </style>
+        </head>
+        <body>
+          <div id="swagger-ui"></div>
+          <script src="./swagger-ui-bundle.js"></script>
+          <script src="./swagger-ui-standalone-preset.js"></script>
+          <script>
+            window.onload = function() {
+              const ui = SwaggerUIBundle({
+                url: '../spec/openapi.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                  SwaggerUIBundle.presets.apis,
+                  SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                  SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout"
+              });
+            };
+          </script>
+        </body>
+        </html>
+        EOF
+
+    - name: Generate ReDoc documentation
+      run: |
+        npx @redocly/cli build-docs generated-openapi.json --output docs-output/redoc/index.html \
+          --theme.colors.primary.main="#00ff88" \
+          --theme.colors.primary.dark="#00cc66" \
+          --theme.typography.code.fontFamily="Monaco, Consolas, Courier New, monospace"
+
+    - name: Generate client libraries
+      run: |
+        # Python client
+        openapi-generator-cli generate \
+          -i generated-openapi.json \
+          -g python \
+          -o docs-output/clients/python \
+          --additional-properties=packageName=fusegu_client,projectName=fusegu-python-client
+        
+        # JavaScript/TypeScript client  
+        openapi-generator-cli generate \
+          -i generated-openapi.json \
+          -g typescript-axios \
+          -o docs-output/clients/typescript \
+          --additional-properties=npmName=fusegu-client,npmVersion=1.0.0
+        
+        # Go client
+        openapi-generator-cli generate \
+          -i generated-openapi.json \
+          -g go \
+          -o docs-output/clients/go \
+          --additional-properties=packageName=fusegu,moduleName=github.com/fusegu-dev/fusegu-go-client
+        
+        # Create client index page
+        cat > docs-output/clients/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Fusegu Client Libraries</title>
+          <style>
+            body { 
+              font-family: 'Monaco', 'Consolas', 'Courier New', monospace; 
+              background: #0a0a0a; 
+              color: #00ff88; 
+              margin: 0; 
+              padding: 2rem; 
+            }
+            .container { max-width: 1200px; margin: 0 auto; }
+            h1 { color: #00ff88; font-size: 2.5rem; margin-bottom: 2rem; text-align: center; }
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+            .card { 
+              background: rgba(0, 255, 136, 0.1); 
+              border: 1px solid rgba(0, 255, 136, 0.3); 
+              border-radius: 8px; 
+              padding: 2rem; 
+              transition: all 0.3s ease; 
+            }
+            .card:hover { 
+              border-color: #00ff88; 
+              box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2); 
+            }
+            .card h3 { font-size: 1.5rem; margin-bottom: 1rem; }
+            .card pre { 
+              background: rgba(0, 0, 0, 0.5); 
+              padding: 1rem; 
+              border-radius: 4px; 
+              margin: 1rem 0; 
+              font-size: 0.9rem; 
+            }
+            .card a { 
+              color: #ff0088; 
+              text-decoration: none; 
+              font-weight: bold; 
+            }
+            .card a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>📦 Client Libraries</h1>
+            <div class="grid">
+              <div class="card">
+                <h3>🐍 Python</h3>
+                <pre>pip install fusegu-client</pre>
+                <a href="python/">View Documentation →</a>
+              </div>
+              
+              <div class="card">
+                <h3>📜 TypeScript</h3>
+                <pre>npm install fusegu-client</pre>
+                <a href="typescript/">View Documentation →</a>
+              </div>
+              
+              <div class="card">
+                <h3>🐹 Go</h3>
+                <pre>go get github.com/fusegu-dev/fusegu-go-client</pre>
+                <a href="go/">View Documentation →</a>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+        EOF
+
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-documentation
+        path: docs-output/
+
+  # Job 2: Deploy to Cloudflare Workers
+  deploy-to-cloudflare:
+    runs-on: ubuntu-latest
+    needs: build-docs
+    if: github.ref == 'refs/heads/main' && needs.build-docs.outputs.openapi-changed == 'true'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download documentation artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: api-documentation
+        path: docs-output/
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install Wrangler
+      run: npm install -g wrangler
+
+    - name: Create Worker script
+      run: |
+        mkdir -p src
+        cat > src/index.js << 'EOF'
+        export default {
+          async fetch(request, env, ctx) {
+            const url = new URL(request.url);
+            const cache = caches.default;
+            
+            // Check cache first
+            let response = await cache.match(request);
+            if (response) return response;
+            
+            // Handle root path
+            if (url.pathname === '/') {
+              url.pathname = '/index.html';
+            }
+            
+            // Try to get the asset
+            response = await env.ASSETS.fetch(url);
+            
+            if (response.status === 404) {
+              // Fallback to index for SPA-like behavior
+              const indexUrl = new URL('/index.html', request.url);
+              response = await env.ASSETS.fetch(indexUrl);
+            }
+            
+            // Cache successful responses
+            if (response.status === 200) {
+              const headers = new Headers(response.headers);
+              headers.set('Cache-Control', 'public, max-age=3600'); // 1 hour
+              headers.set('X-Frame-Options', 'DENY');
+              headers.set('X-Content-Type-Options', 'nosniff');
+              
+              response = new Response(response.body, { 
+                status: response.status,
+                statusText: response.statusText,
+                headers 
+              });
+              
+              ctx.waitUntil(cache.put(request, response.clone()));
+            }
+            
+            return response;
+          },
+        };
+        EOF
+
+    - name: Create wrangler.toml
+      run: |
+        cat > wrangler.toml << 'EOF'
+        name = "fusegu-docs"
+        main = "src/index.js"
+        compatibility_date = "2025-01-01"
+        
+        [assets]
+        directory = "docs-output"
+        
+        [[assets.bindings]]
+        name = "ASSETS"
+        EOF
+
+    - name: Deploy to Cloudflare Workers
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      run: wrangler deploy
+
+  # Job 3: Notify on completion
+  notify:
+    runs-on: ubuntu-latest
+    needs: [build-docs, deploy-to-cloudflare]
+    if: always()
+    
+    steps:
+    - name: Notify success
+      if: needs.deploy-to-cloudflare.result == 'success'
+      run: |
+        echo "✅ Documentation deployed successfully!"
+        echo "🚀 Live at: https://fusegu.dev"
+        echo "⚡ Swagger UI: https://fusegu.dev/swagger"
+        echo "📋 Documentation: https://fusegu.dev/redoc"
+        echo "🔧 Client SDKs: https://fusegu.dev/clients"
+
+    - name: Notify failure
+      if: needs.deploy-to-cloudflare.result == 'failure'
+      run: |
+        echo "❌ Documentation deployment failed!"
+        exit 1

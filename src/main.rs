@@ -5,6 +5,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 /// Application exit codes following Unix conventions
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)] // Some variants may be used for future error handling
 enum ExitCode {
     /// Successful execution
     Success = 0,
@@ -45,7 +46,7 @@ fn exit_gracefully(code: ExitCode) -> ! {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() {
     // Disable backtraces by default for cleaner error output
     // Set RUST_BACKTRACE=1 or FUSEGU_DEBUG=1 to enable for debugging
     if std::env::var("RUST_BACKTRACE").is_err() && std::env::var("FUSEGU_DEBUG").is_err() {
@@ -53,6 +54,11 @@ async fn main() -> anyhow::Result<()> {
             std::env::set_var("RUST_BACKTRACE", "0");
         }
     }
+
+    run_server().await;
+}
+
+async fn run_server() {
     // Load configuration from .env
     let config = match Config::load() {
         Ok(config) => config,
@@ -184,7 +190,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     tracing::info!("🛑 Server shut down gracefully");
-    Ok(())
+    exit_gracefully(ExitCode::Success);
 }
 
 /// Handle graceful shutdown on Ctrl+C
