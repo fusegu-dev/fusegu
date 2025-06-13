@@ -1,7 +1,6 @@
 //! Health check endpoint for monitoring and load balancers
 
 use axum::Json;
-use serde_json::json;
 
 use super::ApiResult;
 use crate::models::HealthResponse;
