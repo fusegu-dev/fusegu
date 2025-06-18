@@ -1,0 +1,1923 @@
+openapi: 3.0.4
+info:
+  title: MinFraud Transaction Risk Assessment API
+  version: 3.0.0
+  description: |
+    A comprehensive RESTful API for transaction fraud detection and risk assessment. 
+    This API provides real-time transaction scoring, detailed insights, and comprehensive 
+    fraud analysis factors to help businesses identify and prevent fraudulent transactions.
+    
+    ## Features
+    - **Real-time risk scoring**: Get instant fraud probability scores (0.01-99.99)
+    - **Comprehensive insights**: Detailed geolocation, device, and behavioral analysis
+    - **Advanced factors**: In-depth risk analysis with explanations and reasoning
+    - **Webhook notifications**: Receive real-time updates on transaction status changes
+    - **Batch processing**: Analyze multiple transactions efficiently
+    - **Historical analytics**: Access transaction history and trends
+    
+    ## Authentication
+    All API endpoints require authentication using API keys passed in the `Authorization` header 
+    with the `Bearer` scheme or HTTP Basic authentication.
+    
+    ## Rate Limiting
+    API requests are subject to rate limiting. Current limits:
+    - Free tier: 1,000 requests/month
+    - Pro tier: 100,000 requests/month  
+    - Enterprise: Custom limits
+    
+    Rate limit information is included in response headers.
+  contact:
+    name: API Support
+    url: https://example.com/support
+    email: api-support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://example.com/terms
+  
+servers:
+  - url: https://api.minfraud.example.com/v3
+    description: Production server
+  - url: https://sandbox.minfraud.example.com/v3
+    description: Sandbox server for testing
+  - url: https://eu.api.minfraud.example.com/v3
+    description: European production server (GDPR compliant)
+
+security:
+  - BearerAuth: []
+  - BasicAuth: []
+
+paths:
+  /transactions:
+    post:
+      operationId: createTransaction
+      summary: Create and score a transaction
+      description: |
+        Submit a new transaction for fraud analysis and receive a risk assessment.
+        The response will include a risk score and may include additional insights 
+        depending on your subscription level.
+      tags:
+        - Transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+            examples:
+              basic_transaction:
+                summary: Basic e-commerce transaction
+                value:
+                  device:
+                    ip_address: "198.51.100.1"
+                    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                  event:
+                    type: "purchase"
+                    transaction_id: "txn_123456789"
+                    time: "2025-06-13T10:30:00Z"
+                  order:
+                    amount: 199.99
+                    currency: "USD"
+                  email:
+                    address: "customer@example.com"
+                  billing:
+                    country: "US"
+                    postal: "10001"
+              complex_transaction:
+                summary: Complex transaction with full details
+                value:
+                  device:
+                    ip_address: "203.0.113.45"
+                    user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)"
+                    session_id: "sess_abc123"
+                    session_age: 1800
+                  event:
+                    type: "purchase"
+                    transaction_id: "txn_987654321"
+                    time: "2025-06-13T14:45:30Z"
+                    shop_id: "shop_main"
+                  account:
+                    user_id: "user_12345"
+                  email:
+                    address: "premium.customer@business.com"
+                  order:
+                    amount: 1299.99
+                    currency: "EUR"
+                    is_gift: false
+                    affiliate_id: "aff_001"
+                  credit_card:
+                    issuer_id_number: "411111"
+                    last_digits: "1111"
+                    avs_result: "Y"
+                    cvv_result: "M"
+                  billing:
+                    first_name: "John"
+                    last_name: "Doe"
+                    address: "123 Main St"
+                    city: "New York"
+                    region: "NY"
+                    postal: "10001"
+                    country: "US"
+                    phone_number: "212-555-0123"
+                  shipping:
+                    first_name: "Jane"
+                    last_name: "Smith"
+                    address: "456 Oak Ave"
+                    city: "Los Angeles"
+                    region: "CA"
+                    postal: "90210"
+                    country: "US"
+                    delivery_speed: "standard"
+      responses:
+        '201':
+          description: Transaction created and scored successfully
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Request limit per hour
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Remaining requests in current window
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: Time when rate limit resets (Unix timestamp)
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: URI of the created transaction resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+              examples:
+                low_risk_response:
+                  summary: Low risk transaction response
+                  value:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    risk_score: 2.45
+                    risk_level: "low"
+                    disposition: "accept"
+                    created_at: "2025-06-13T10:30:00.123Z"
+                    ip_address:
+                      risk: 1.23
+                      country:
+                        iso_code: "US"
+                        name: "United States"
+                      location:
+                        latitude: 40.7128
+                        longitude: -74.0060
+                        time_zone: "America/New_York"
+                    funds_remaining: 9850
+                    queries_remaining: 485
+                    _links:
+                      self: 
+                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000"
+                      insights:
+                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000/insights"
+                      factors:
+                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000/factors"
+                high_risk_response:
+                  summary: High risk transaction response
+                  value:
+                    id: "550e8400-e29b-41d4-a716-446655440001"
+                    risk_score: 87.65
+                    risk_level: "high"
+                    disposition: "reject"
+                    created_at: "2025-06-13T14:45:30.456Z"
+                    ip_address:
+                      risk: 85.21
+                      risk_reasons:
+                        - code: "ANONYMOUS_IP"
+                          reason: "The IP address belongs to an anonymous network"
+                        - code: "MINFRAUD_NETWORK_ACTIVITY"  
+                          reason: "Suspicious activity detected on this IP"
+                    funds_remaining: 9849
+                    queries_remaining: 484
+                    warnings:
+                      - code: "BILLING_POSTAL_NOT_FOUND"
+                        message: "Billing postal code could not be verified"
+                        input_path: "/billing/postal"
+                    _links:
+                      self:
+                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001"
+                      insights:
+                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001/insights"
+                      factors:
+                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001/factors"
+                      report:
+                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001/reports"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    get:
+      operationId: listTransactions
+      summary: List transactions
+      description: |
+        Retrieve a paginated list of transactions. Results can be filtered and sorted
+        by various criteria. Useful for analytics and compliance reporting.
+      tags:
+        - Transactions
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of transactions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of transactions to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: risk_level
+          in: query
+          description: Filter by risk level
+          schema:
+            type: string
+            enum: [low, medium, high, very_high]
+        - name: disposition
+          in: query
+          description: Filter by disposition
+          schema:
+            type: string
+            enum: [accept, reject, review, test]
+        - name: from_date
+          in: query
+          description: Start date for filtering (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to_date
+          in: query
+          description: End date for filtering (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [created_at, risk_score, -created_at, -risk_score]
+            default: -created_at
+      responses:
+        '200':
+          description: List of transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /transactions/{transactionId}:
+    get:
+      operationId: getTransaction
+      summary: Get transaction by ID
+      description: |
+        Retrieve detailed information about a specific transaction including
+        its risk score, analysis results, and current status.
+      tags:
+        - Transactions
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: Unique identifier for the transaction
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /transactions/{transactionId}/insights:
+    get:
+      operationId: getTransactionInsights
+      summary: Get detailed transaction insights
+      description: |
+        Retrieve comprehensive insights for a transaction including geolocation data,
+        device information, email analysis, and address verification results.
+        Available for Insights and Factors subscription tiers.
+      tags:
+        - Transactions
+        - Insights
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: Unique identifier for the transaction
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction insights retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionInsights'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /transactions/{transactionId}/factors:
+    get:
+      operationId: getTransactionFactors
+      summary: Get detailed risk factors analysis
+      description: |
+        Retrieve comprehensive risk factor analysis including detailed explanations
+        of why the transaction received its risk score. Available for Factors subscription tier.
+      tags:
+        - Transactions
+        - Risk Analysis
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: Unique identifier for the transaction
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction risk factors retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionFactors'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /transactions/{transactionId}/reports:
+    post:
+      operationId: reportTransaction
+      summary: Report transaction outcome
+      description: |
+        Report the actual outcome of a transaction (fraud, chargeback, false positive)
+        to help improve the accuracy of future risk assessments. This feedback is
+        crucial for machine learning model improvement.
+      tags:
+        - Transactions
+        - Reporting
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: Unique identifier for the transaction
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionReport'
+            examples:
+              chargeback_report:
+                summary: Report a chargeback
+                value:
+                  tag: "chargeback"
+                  chargeback_code: "4837"
+                  notes: "Customer disputed transaction claiming non-receipt"
+                  occurred_at: "2025-06-20T09:15:00Z"
+              false_positive_report:
+                summary: Report a false positive
+                value:
+                  tag: "not_fraud"
+                  notes: "Legitimate customer, verified via phone call"
+                  occurred_at: "2025-06-13T11:00:00Z"
+      responses:
+        '201':
+          description: Transaction report submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Report already exists for this transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transactions/batch:
+    post:
+      operationId: createBatchTransactions
+      summary: Submit multiple transactions for batch processing
+      description: |
+        Submit multiple transactions for analysis in a single request.
+        Useful for processing historical data or handling high-volume scenarios.
+        Results are processed asynchronously and can be retrieved via the batch status endpoint.
+      tags:
+        - Transactions
+        - Batch Processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transactions:
+                  type: array
+                  items:
+                    allOf:
+                      - $ref: '#/components/schemas/TransactionRequest'
+                      - type: object
+                        properties:
+                          external_id:
+                            type: string
+                            description: Your internal identifier for this transaction
+                  minItems: 1
+                  maxItems: 1000
+                webhook_url:
+                  type: string
+                  format: uri
+                  description: Optional webhook URL to receive batch completion notification
+              required:
+                - transactions
+      responses:
+        '202':
+          description: Batch submitted for processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+
+  /batches/{batchId}:
+    get:
+      operationId: getBatchStatus
+      summary: Get batch processing status
+      description: |
+        Retrieve the status and results of a batch processing job.
+        Once completed, results include all transaction analyses.
+      tags:
+        - Batch Processing
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Batch status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /webhooks:
+    post:
+      operationId: createWebhook
+      summary: Create a webhook subscription
+      description: |
+        Set up a webhook to receive notifications for various events such as
+        transaction completions, batch processing updates, or account changes.
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRequest'
+      responses:
+        '201':
+          description: Webhook created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    
+    get:
+      operationId: listWebhooks
+      summary: List webhook subscriptions
+      description: Retrieve all active webhook subscriptions for your account
+      tags:
+        - Webhooks
+      responses:
+        '200':
+          description: List of webhooks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  webhooks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookResponse'
+                  _links:
+                    $ref: '#/components/schemas/Links'
+
+  /webhooks/{webhookId}:
+    get:
+      operationId: getWebhook
+      summary: Get webhook details
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Webhook details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    patch:
+      operationId: updateWebhook
+      summary: Update webhook configuration
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookUpdate'
+      responses:
+        '200':
+          description: Webhook updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      operationId: deleteWebhook
+      summary: Delete webhook subscription
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Webhook deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /account:
+    get:
+      operationId: getAccount
+      summary: Get account information
+      description: |
+        Retrieve current account status including subscription details,
+        usage statistics, and remaining credits/queries.
+      tags:
+        - Account
+      responses:
+        '200':
+          description: Account information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /analytics:
+    get:
+      operationId: getAnalytics
+      summary: Get transaction analytics
+      description: |
+        Retrieve analytics and insights about your transaction patterns,
+        risk distribution, and detection accuracy over time.
+      tags:
+        - Analytics
+      parameters:
+        - name: period
+          in: query
+          description: Time period for analytics
+          schema:
+            type: string
+            enum: [last_24h, last_7d, last_30d, last_90d]
+            default: last_30d
+        - name: granularity
+          in: query
+          description: Data granularity
+          schema:
+            type: string
+            enum: [hour, day, week]
+            default: day
+      responses:
+        '200':
+          description: Analytics data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analytics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Provide your API key as a Bearer token in the Authorization header.
+        Example: `Authorization: Bearer your-api-key-here`
+    
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: |
+        Use HTTP Basic authentication with your account ID as username 
+        and license key as password.
+
+  schemas:
+    TransactionRequest:
+      type: object
+      required:
+        - device
+        - event
+      properties:
+        device:
+          $ref: '#/components/schemas/Device'
+        event:
+          $ref: '#/components/schemas/Event'
+        account:
+          $ref: '#/components/schemas/Account'
+        email:
+          $ref: '#/components/schemas/Email'
+        billing:
+          $ref: '#/components/schemas/Address'
+        shipping:
+          $ref: '#/components/schemas/ShippingAddress'
+        payment:
+          $ref: '#/components/schemas/Payment'
+        credit_card:
+          $ref: '#/components/schemas/CreditCard'
+        order:
+          $ref: '#/components/schemas/Order'
+        shopping_cart:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        custom_inputs:
+          type: object
+          additionalProperties: true
+          description: Custom input fields defined for your account
+
+    Device:
+      type: object
+      required:
+        - ip_address
+      properties:
+        ip_address:
+          type: string
+          format: ipv4 | ipv6
+          description: IPv4 or IPv6 address of the device
+          example: "198.51.100.1"
+        user_agent:
+          type: string
+          maxLength: 512
+          description: HTTP User-Agent header
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        accept_language:
+          type: string
+          maxLength: 255
+          description: HTTP Accept-Language header
+          example: "en-US,en;q=0.9"
+        session_id:
+          type: string
+          maxLength: 255
+          description: Unique session identifier
+          example: "sess_abc123def456"
+        session_age:
+          type: number
+          minimum: 0
+          maximum: 9999999999999
+          description: Session age in seconds
+          example: 1800
+
+    Event:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [account_creation, account_login, email_change, password_reset, payout_change, purchase, recurring_purchase, referral, survey]
+          description: Type of event being scored
+          example: "purchase"
+        transaction_id:
+          type: string
+          maxLength: 255
+          description: Your internal transaction ID
+          example: "txn_123456789"
+        shop_id:
+          type: string
+          maxLength: 255
+          description: Shop or merchant identifier
+          example: "shop_main"
+        time:
+          type: string
+          format: date-time
+          description: Event timestamp (RFC 3339)
+          example: "2025-06-13T10:30:00Z"
+
+    Account:
+      type: object
+      properties:
+        user_id:
+          type: string
+          maxLength: 255
+          description: Unique user identifier in your system
+          example: "user_12345"
+        username_md5:
+          type: string
+          maxLength: 32
+          pattern: "^[a-f0-9]{32}$"
+          description: MD5 hash of username
+          example: "5d41402abc4b2a76b9719d911017c592"
+
+    Email:
+      type: object
+      properties:
+        address:
+          type: string
+          maxLength: 255
+          description: Email address or MD5 hash of email
+          example: "customer@example.com"
+        domain:
+          type: string
+          maxLength: 255
+          description: Email domain (required if address is MD5 hash)
+          example: "example.com"
+
+    Address:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 255
+          example: "John"
+        last_name:
+          type: string
+          maxLength: 255
+          example: "Doe"
+        company:
+          type: string
+          maxLength: 255
+          example: "Acme Corp"
+        address:
+          type: string
+          maxLength: 255
+          example: "123 Main St"
+        address_2:
+          type: string
+          maxLength: 255
+          example: "Apt 4B"
+        city:
+          type: string
+          maxLength: 255
+          example: "New York"
+        region:
+          type: string
+          maxLength: 4
+          description: ISO 3166-2 subdivision code
+          example: "NY"
+        postal:
+          type: string
+          maxLength: 255
+          example: "10001"
+        country:
+          type: string
+          maxLength: 2
+          pattern: "^[A-Z]{2}$"
+          description: ISO 3166-1 alpha-2 country code
+          example: "US"
+        phone_number:
+          type: string
+          maxLength: 255
+          example: "212-555-0123"
+        phone_country_code:
+          type: string
+          maxLength: 4
+          example: "1"
+
+    ShippingAddress:
+      allOf:
+        - $ref: '#/components/schemas/Address'
+        - type: object
+          properties:
+            delivery_speed:
+              type: string
+              enum: [same_day, overnight, expedited, standard]
+              example: "standard"
+
+    Payment:
+      type: object
+      properties:
+        processor:
+          type: string
+          enum: [stripe, square, paypal, braintree, adyen, worldpay, other]
+          example: "stripe"
+        was_authorized:
+          type: boolean
+          example: true
+        decline_code:
+          type: string
+          maxLength: 255
+          example: "insufficient_funds"
+
+    CreditCard:
+      type: object
+      properties:
+        issuer_id_number:
+          type: string
+          maxLength: 8
+          pattern: "^[0-9]{6,8}$"
+          description: First 6-8 digits of credit card (BIN)
+          example: "411111"
+        last_digits:
+          type: string
+          maxLength: 4
+          pattern: "^[0-9]{2,4}$"
+          description: Last 2-4 digits of credit card
+          example: "1111"
+        token:
+          type: string
+          maxLength: 255
+          description: Tokenized card identifier
+          example: "tok_abc123def456"
+        bank_name:
+          type: string
+          maxLength: 255
+          example: "Chase Bank"
+        bank_phone_number:
+          type: string
+          maxLength: 255
+          example: "1-800-432-3117"
+        bank_phone_country_code:
+          type: string
+          maxLength: 4
+          example: "1"
+        country:
+          type: string
+          maxLength: 2
+          pattern: "^[A-Z]{2}$"
+          description: Country where card was issued
+          example: "US"
+        avs_result:
+          type: string
+          maxLength: 1
+          description: Address Verification System result
+          example: "Y"
+        cvv_result:
+          type: string
+          maxLength: 1
+          description: CVV verification result
+          example: "M"
+        was_3d_secure_successful:
+          type: boolean
+          description: Whether 3D Secure verification was successful
+          example: true
+
+    Order:
+      type: object
+      properties:
+        amount:
+          type: number
+          minimum: 0
+          maximum: 99999999999999
+          description: Order amount before taxes and discounts
+          example: 199.99
+        currency:
+          type: string
+          maxLength: 3
+          pattern: "^[A-Z]{3}$"
+          description: ISO 4217 currency code
+          example: "USD"
+        discount_code:
+          type: string
+          maxLength: 255
+          example: "SAVE10"
+        affiliate_id:
+          type: string
+          maxLength: 255
+          example: "aff_partner_001"
+        subaffiliate_id:
+          type: string
+          maxLength: 255
+          example: "sub_social_media"
+        referrer_uri:
+          type: string
+          format: uri
+          maxLength: 1024
+          example: "https://google.com/search"
+        is_gift:
+          type: boolean
+          example: false
+        has_gift_message:
+          type: boolean
+          example: false
+
+    CartItem:
+      type: object
+      required:
+        - item_id
+        - price
+        - quantity
+      properties:
+        item_id:
+          type: string
+          maxLength: 255
+          description: Product identifier
+          example: "prod_abc123"
+        category:
+          type: string
+          maxLength: 255
+          example: "electronics"
+        price:
+          type: number
+          minimum: 0
+          maximum: 99999999999999
+          example: 99.99
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 9999999999999
+          example: 2
+
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique transaction identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        risk_score:
+          type: number
+          minimum: 0.01
+          maximum: 99.99
+          description: Fraud risk score (0.01 = low risk, 99.99 = high risk)
+          example: 15.42
+        risk_level:
+          type: string
+          enum: [low, medium, high, very_high]
+          description: Risk level classification
+          example: "low"
+        disposition:
+          type: string
+          enum: [accept, reject, review, test]
+          description: Recommended action
+          example: "accept"
+        created_at:
+          type: string
+          format: date-time
+          description: Transaction creation timestamp
+          example: "2025-06-13T10:30:00.123Z"
+        ip_address:
+          $ref: '#/components/schemas/IPAddressInfo'
+        funds_remaining:
+          type: number
+          minimum: 0
+          description: Remaining account funds
+          example: 9850.75
+        queries_remaining:
+          type: integer
+          minimum: 0
+          description: Remaining queries in current period
+          example: 485
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+        _links:
+          $ref: '#/components/schemas/Links'
+
+    TransactionInsights:
+      allOf:
+        - $ref: '#/components/schemas/TransactionResponse'
+        - type: object
+          properties:
+            credit_card:
+              $ref: '#/components/schemas/CreditCardInsights'
+            device:
+              $ref: '#/components/schemas/DeviceInsights'
+            email:
+              $ref: '#/components/schemas/EmailInsights'
+            billing_address:
+              $ref: '#/components/schemas/AddressInsights'
+            shipping_address:
+              $ref: '#/components/schemas/AddressInsights'
+            billing_phone:
+              $ref: '#/components/schemas/PhoneInsights'
+            shipping_phone:
+              $ref: '#/components/schemas/PhoneInsights'
+
+    TransactionFactors:
+      allOf:
+        - $ref: '#/components/schemas/TransactionInsights'
+        - type: object
+          properties:
+            risk_score_reasons:
+              type: array
+              items:
+                $ref: '#/components/schemas/RiskScoreReason'
+
+    IPAddressInfo:
+      type: object
+      properties:
+        risk:
+          type: number
+          minimum: 0.01
+          maximum: 99.99
+          example: 2.15
+        country:
+          type: object
+          properties:
+            iso_code:
+              type: string
+              example: "US"
+            name:
+              type: string
+              example: "United States"
+            confidence:
+              type: integer
+              minimum: 0
+              maximum: 100
+              example: 95
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              example: 40.7128
+            longitude:
+              type: number
+              example: -74.0060
+            accuracy_radius:
+              type: integer
+              example: 20
+            time_zone:
+              type: string
+              example: "America/New_York"
+            local_time:
+              type: string
+              format: date-time
+              example: "2025-06-13T06:30:00-04:00"
+        risk_reasons:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                enum: [ANONYMOUS_IP, BILLING_POSTAL_VELOCITY, EMAIL_VELOCITY, HIGH_RISK_DEVICE, HIGH_RISK_EMAIL, ISSUER_ID_NUMBER_VELOCITY, MINFRAUD_NETWORK_ACTIVITY]
+                example: "ANONYMOUS_IP"
+              reason:
+                type: string
+                example: "The IP address belongs to an anonymous network"
+        traits:
+          type: object
+          properties:
+            is_anonymous:
+              type: boolean
+            is_anonymous_proxy:
+              type: boolean
+            is_anonymous_vpn:
+              type: boolean
+            is_hosting_provider:
+              type: boolean
+            is_public_proxy:
+              type: boolean
+            is_residential_proxy:
+              type: boolean
+            is_tor_exit_node:
+              type: boolean
+            connection_type:
+              type: string
+              example: "Cable/DSL"
+            isp:
+              type: string
+              example: "Comcast Cable"
+            organization:
+              type: string
+              example: "Comcast Cable Communications"
+
+    CreditCardInsights:
+      type: object
+      properties:
+        brand:
+          type: string
+          example: "Visa"
+        country:
+          type: string
+          example: "US"
+        type:
+          type: string
+          enum: [credit, debit, charge]
+          example: "credit"
+        is_business:
+          type: boolean
+          example: false
+        is_prepaid:
+          type: boolean
+          example: false
+        is_virtual:
+          type: boolean
+          example: false
+        is_issued_in_billing_address_country:
+          type: boolean
+          example: true
+        issuer:
+          type: object
+          properties:
+            name:
+              type: string
+              example: "Chase Bank"
+            phone_number:
+              type: string
+              example: "1-800-432-3117"
+            matches_provided_name:
+              type: boolean
+              example: true
+            matches_provided_phone_number:
+              type: boolean
+              example: true
+
+    DeviceInsights:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Device fingerprint ID
+          example: "7835b099-d385-4e5b-969e-7df26181d73b"
+        confidence:
+          type: number
+          minimum: 0.01
+          maximum: 99.99
+          description: Confidence that device ID is unique
+          example: 95.5
+        last_seen:
+          type: string
+          format: date-time
+          description: When device was last seen
+          example: "2025-06-10T14:30:00Z"
+        local_time:
+          type: string
+          format: date-time
+          description: Local time on device
+          example: "2025-06-13T06:30:00-04:00"
+
+    EmailInsights:
+      type: object
+      properties:
+        is_free:
+          type: boolean
+          description: Whether email is from free provider
+          example: false
+        is_disposable:
+          type: boolean
+          description: Whether email is from disposable provider
+          example: false
+        is_high_risk:
+          type: boolean
+          description: Whether email is associated with fraud
+          example: false
+        first_seen:
+          type: string
+          format: date
+          description: When email was first seen in network
+          example: "2020-03-15"
+        domain:
+          type: object
+          properties:
+            first_seen:
+              type: string
+              format: date
+              example: "2018-01-01"
+
+    AddressInsights:
+      type: object
+      properties:
+        is_postal_in_city:
+          type: boolean
+          description: Whether postal code matches city
+          example: true
+        is_in_ip_country:
+          type: boolean
+          description: Whether address is in same country as IP
+          example: true
+        is_high_risk:
+          type: boolean
+          description: Whether address is associated with fraud
+          example: false
+        distance_to_ip_location:
+          type: number
+          description: Distance from IP location in kilometers
+          example: 15.3
+        distance_to_billing_address:
+          type: number
+          description: Distance to billing address in kilometers
+          example: 5.7
+        latitude:
+          type: number
+          example: 40.7128
+        longitude:
+          type: number
+          example: -74.0060
+
+    PhoneInsights:
+      type: object
+      properties:
+        country:
+          type: string
+          description: Phone number country code
+          example: "US"
+        network_operator:
+          type: string
+          description: Mobile network operator
+          example: "Verizon Wireless"
+        number_type:
+          type: string
+          enum: [fixed, mobile]
+          example: "mobile"
+        is_voip:
+          type: boolean
+          description: Whether number is VoIP
+          example: false
+        matches_postal:
+          type: boolean
+          description: Whether phone prefix matches postal code
+          example: true
+
+    RiskScoreReason:
+      type: object
+      properties:
+        multiplier:
+          type: number
+          minimum: 0.01
+          maximum: 100
+          description: Risk multiplier applied
+          example: 1.45
+        reasons:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "ANONYMOUS_IP"
+              reason:
+                type: string
+                example: "Risk due to IP being an Anonymous IP"
+
+    TransactionReport:
+      type: object
+      required:
+        - tag
+      properties:
+        tag:
+          type: string
+          enum: [chargeback, not_fraud, suspected_fraud, spam_or_abuse]
+          description: Transaction outcome
+          example: "chargeback"
+        chargeback_code:
+          type: string
+          maxLength: 32
+          description: Chargeback reason code
+          example: "4837"
+        notes:
+          type: string
+          maxLength: 1000
+          description: Additional notes about the outcome
+          example: "Customer disputed claiming non-receipt"
+        occurred_at:
+          type: string
+          format: date-time
+          description: When the outcome occurred
+          example: "2025-06-20T09:15:00Z"
+
+    TransactionList:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        _links:
+          $ref: '#/components/schemas/Links'
+
+    Pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+          example: 20
+        offset:
+          type: integer
+          example: 0
+        total:
+          type: integer
+          example: 1543
+        has_more:
+          type: boolean
+          example: true
+
+    BatchResponse:
+      type: object
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+          example: "pending"
+        submitted_at:
+          type: string
+          format: date-time
+          example: "2025-06-13T10:30:00Z"
+        transaction_count:
+          type: integer
+          example: 250
+        estimated_completion_time:
+          type: string
+          format: date-time
+          example: "2025-06-13T10:35:00Z"
+        _links:
+          type: object
+          properties:
+            self:
+              type: object
+              properties:
+                href:
+                  type: string
+                  example: "/v3/batches/123e4567-e89b-12d3-a456-426614174000"
+
+    BatchStatus:
+      allOf:
+        - $ref: '#/components/schemas/BatchResponse'
+        - type: object
+          properties:
+            completed_at:
+              type: string
+              format: date-time
+              example: "2025-06-13T10:33:45Z"
+            processed_count:
+              type: integer
+              example: 250
+            success_count:
+              type: integer
+              example: 248
+            error_count:
+              type: integer
+              example: 2
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  external_id:
+                    type: string
+                    example: "ext_txn_001"
+                  transaction:
+                    $ref: '#/components/schemas/TransactionResponse'
+                  error:
+                    $ref: '#/components/schemas/Error'
+
+    WebhookRequest:
+      type: object
+      required:
+        - url
+        - events
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Webhook endpoint URL
+          example: "https://api.yoursite.com/webhooks/minfraud"
+        events:
+          type: array
+          items:
+            type: string
+            enum: [transaction.completed, transaction.updated, batch.completed, account.updated]
+          description: Events to subscribe to
+          example: ["transaction.completed", "batch.completed"]
+        secret:
+          type: string
+          maxLength: 255
+          description: Secret for webhook signature verification
+          example: "whsec_abc123def456"
+        description:
+          type: string
+          maxLength: 255
+          description: Webhook description
+          example: "Production webhook for transaction notifications"
+
+    WebhookResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebhookRequest'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "456e7890-e12b-34d5-a678-901234567890"
+            created_at:
+              type: string
+              format: date-time
+              example: "2025-06-13T10:30:00Z"
+            updated_at:
+              type: string
+              format: date-time
+              example: "2025-06-13T10:30:00Z"
+            is_active:
+              type: boolean
+              example: true
+            last_triggered:
+              type: string
+              format: date-time
+              example: "2025-06-13T12:45:30Z"
+            success_count:
+              type: integer
+              example: 1542
+            failure_count:
+              type: integer
+              example: 3
+
+    WebhookUpdate:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [transaction.completed, transaction.updated, batch.completed, account.updated]
+        is_active:
+          type: boolean
+        description:
+          type: string
+          maxLength: 255
+
+    AccountInfo:
+      type: object
+      properties:
+        account_id:
+          type: string
+          example: "acc_12345"
+        subscription_tier:
+          type: string
+          enum: [free, pro, enterprise]
+          example: "pro"
+        funds_remaining:
+          type: number
+          minimum: 0
+          example: 9850.75
+        monthly_quota:
+          type: integer
+          minimum: 0
+          example: 100000
+        queries_used_this_month:
+          type: integer
+          minimum: 0
+          example: 15642
+        queries_remaining_this_month:
+          type: integer
+          minimum: 0
+          example: 84358
+        billing_cycle_start:
+          type: string
+          format: date
+          example: "2025-06-01"
+        billing_cycle_end:
+          type: string
+          format: date
+          example: "2025-06-30"
+
+    Analytics:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+              example: "2025-05-14T00:00:00Z"
+            end:
+              type: string
+              format: date-time
+              example: "2025-06-13T23:59:59Z"
+        summary:
+          type: object
+          properties:
+            total_transactions:
+              type: integer
+              example: 15642
+            average_risk_score:
+              type: number
+              example: 12.45
+            risk_distribution:
+              type: object
+              properties:
+                low:
+                  type: integer
+                  example: 12456
+                medium:
+                  type: integer
+                  example: 2854
+                high:
+                  type: integer
+                  example: 298
+                very_high:
+                  type: integer
+                  example: 34
+        time_series:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                example: "2025-06-13T00:00:00Z"
+              transaction_count:
+                type: integer
+                example: 542
+              average_risk_score:
+                type: number
+                example: 11.23
+              disposition_counts:
+                type: object
+                properties:
+                  accept:
+                    type: integer
+                    example: 485
+                  reject:
+                    type: integer
+                    example: 34
+                  review:
+                    type: integer
+                    example: 23
+
+    ReportResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "789e0123-e45f-67g8-h901-234567890123"
+        transaction_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        tag:
+          type: string
+          example: "chargeback"
+        submitted_at:
+          type: string
+          format: date-time
+          example: "2025-06-13T15:30:00Z"
+        status:
+          type: string
+          enum: [received, processing, processed]
+          example: "received"
+
+    Warning:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [
+            BILLING_CITY_NOT_FOUND,
+            BILLING_COUNTRY_MISSING,
+            BILLING_COUNTRY_NOT_FOUND,
+            BILLING_POSTAL_NOT_FOUND,
+            BILLING_REGION_NOT_FOUND,
+            EMAIL_ADDRESS_UNUSABLE,
+            INPUT_INVALID,
+            INPUT_UNKNOWN,
+            IP_ADDRESS_INVALID,
+            IP_ADDRESS_NOT_FOUND,
+            IP_ADDRESS_RESERVED,
+            SHIPPING_CITY_NOT_FOUND,
+            SHIPPING_COUNTRY_MISSING,
+            SHIPPING_COUNTRY_NOT_FOUND,
+            SHIPPING_POSTAL_NOT_FOUND,
+            SHIPPING_REGION_NOT_FOUND
+          ]
+          example: "BILLING_POSTAL_NOT_FOUND"
+        message:
+          type: string
+          example: "The billing postal code could not be found in our database"
+        input_path:
+          type: string
+          description: JSON pointer to the problematic input field
+          example: "/billing/postal"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "The request contains invalid data"
+        details:
+          type: object
+          description: Additional error details
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-06-13T10:30:00Z"
+        request_id:
+          type: string
+          format: uuid
+          example: "req_789e0123-e45f-67g8-h901-234567890123"
+
+    Links:
+      type: object
+      description: HATEOAS links for resource navigation
+      properties:
+        self:
+          type: object
+          properties:
+            href:
+              type: string
+              example: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000"
+        next:
+          type: object
+          properties:
+            href:
+              type: string
+              example: "/v3/transactions?offset=20&limit=20"
+        prev:
+          type: object
+          properties:
+            href:
+              type: string
+              example: "/v3/transactions?offset=0&limit=20"
+        first:
+          type: object
+          properties:
+            href:
+              type: string
+              example: "/v3/transactions?offset=0&limit=20"
+        last:
+          type: object
+          properties:
+            href:
+              type: string
+              example: "/v3/transactions?offset=1540&limit=20"
+
+  responses:
+    BadRequest:
+      description: Bad Request - Invalid request format or parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "BAD_REQUEST"
+            message: "Invalid request format"
+            timestamp: "2025-06-13T10:30:00Z"
+
+    Unauthorized:
+      description: Unauthorized - Invalid or missing authentication credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "UNAUTHORIZED"
+            message: "Invalid API key"
+            timestamp: "2025-06-13T10:30:00Z"
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions for this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "FORBIDDEN"
+            message: "Insufficient permissions to access this resource"
+            timestamp: "2025-06-13T10:30:00Z"
+
+    NotFound:
+      description: Not Found - The requested resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "NOT_FOUND"
+            message: "Transaction not found"
+            timestamp: "2025-06-13T10:30:00Z"
+
+    PaymentRequired:
+      description: Payment Required - Upgrade required to access this feature
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "PAYMENT_REQUIRED"
+            message: "Upgrade to Pro plan required for detailed insights"
+            timestamp: "2025-06-13T10:30:00Z"
+
+    PayloadTooLarge:
+      description: Payload Too Large - Request body exceeds maximum size limit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "PAYLOAD_TOO_LARGE"
+            message: "Request body exceeds 20KB limit"
+            timestamp: "2025-06-13T10:30:00Z"
+
+    ValidationError:
+      description: Unprocessable Entity - Request validation failed
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Error'
+              - type: object
+                properties:
+                  validation_errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                          example: "device.ip_address"
+                        code:
+                          type: string
+                          example: "INVALID_FORMAT"
+                        message:
+                          type: string
+                          example: "Invalid IP address format"
+          example:
+            code: "VALIDATION_ERROR"
+            message: "Request validation failed"
+            validation_errors:
+              - field: "device.ip_address"
+                code: "INVALID_FORMAT"
+                message: "Invalid IP address format"
+            timestamp: "2025-06-13T10:30:00Z"
+
+    RateLimitExceeded:
+      description: Too Many Requests - Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per time window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Time when rate limit resets (Unix timestamp)
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "RATE_LIMIT_EXCEEDED"
+            message: "API rate limit exceeded. Try again in 60 seconds."
+            timestamp: "2025-06-13T10:30:00Z"
+
+    InternalServerError:
+      description: Internal Server Error - Unexpected server error occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "INTERNAL_SERVER_ERROR"
+            message: "An unexpected error occurred. Please try again later."
+            timestamp: "2025-06-13T10:30:00Z"
+
+tags:
+  - name: Transactions
+    description: Core transaction fraud detection and risk assessment
+  - name: Insights
+    description: Detailed transaction insights and analysis (Pro+ plans)
+  - name: Risk Analysis
+    description: Advanced risk factors and explanations (Enterprise plans)
+  - name: Reporting
+    description: Report transaction outcomes to improve detection accuracy
+  - name: Batch Processing
+    description: Process multiple transactions efficiently
+  - name: Webhooks
+    description: Real-time notifications for transaction and account events
+  - name: Account
+    description: Account management and usage information
+  - name: Analytics
+    description: Transaction analytics and insights
