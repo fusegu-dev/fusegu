@@ -1,0 +1,43 @@
+# .rustfmt.toml - Fusegu formatting configuration
+# Based on Rust 2025 best practices
+
+# Edition and basic formatting
+edition = "2024"
+max_width = 100                    # Standard line width
+hard_tabs = false                  # Use spaces (Rust standard)
+tab_spaces = 4                     # 4 spaces per indent (Rust standard)
+
+# Import organization (stable options)
+imports_granularity = "Crate"      # Group imports by crate
+group_imports = "StdExternalCrate"  # Std, external, then internal imports
+reorder_imports = true             # Sort imports alphabetically
+
+# Code organization
+use_small_heuristics = "Default"   # Smart formatting decisions
+newline_style = "Unix"             # Consistent line endings
+remove_nested_parens = true        # Clean up unnecessary parentheses
+
+# Comments and documentation
+normalize_comments = true          # Consistent comment formatting
+wrap_comments = true               # Wrap long comments
+comment_width = 100               # Match max_width for comments
+format_code_in_doc_comments = true # Format code examples in docs
+
+# String and macro formatting
+format_strings = true             # Format string literals
+format_macro_matchers = true      # Format macro patterns
+
+# Function and struct formatting
+fn_args_layout = "Tall"           # Each argument on new line when wrapping
+brace_style = "SameLineWhere"     # Consistent brace placement
+where_single_line = true          # Keep simple where clauses on one line
+
+# Control flow formatting
+control_brace_style = "AlwaysSameLine"  # Consistent brace style
+match_block_trailing_comma = true      # Trailing commas in match blocks
+
+# Advanced formatting (consider enabling)
+# trailing_comma = "Vertical"     # Add trailing commas when items are vertical
+# trailing_semicolon = true       # Add trailing semicolons
+# space_before_colon = false      # No space before colons
+# space_after_colon = true        # Space after colons

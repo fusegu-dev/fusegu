@@ -1,0 +1,53 @@
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+
+[licenses]
+# Allow common Rust ecosystem licenses + AGPL-3.0 for fusegu
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "Unicode-3.0",     # Unicode License v3 - OSI approved, used by unicode-ident
+    "AGPL-3.0",        # For fusegu itself (cargo-deny recognizes this identifier)
+    "Zlib",            # zlib License - OSI approved, FSF Free/Libre
+]
+exceptions = []
+
+[bans]
+# Be more strict than Tokio since we're handling financial data
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+
+# Ban security-sensitive crates that have better alternatives
+deny = [
+    # Prefer rustls over openssl for better security
+    { crate = "openssl", use-instead = "rustls" },
+    { crate = "openssl-sys", use-instead = "rustls" },
+    
+    # Ban old/insecure crypto crates
+    { crate = "md5", use-instead = "sha2" },
+    { crate = "sha1", use-instead = "sha2" },
+]
+
+# Skip certain crates from duplicate version checking if needed
+skip = [
+    # Common ecosystem crates that often have multiple versions
+    { crate = "regex-automata" },
+    { crate = "regex-syntax" },
+    { crate = "windows-sys" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
