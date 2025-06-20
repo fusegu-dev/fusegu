@@ -1,3 +1,4 @@
+```mermaid
 erDiagram
     accounts {
         uuid id PK
@@ -271,3 +272,4 @@ erDiagram
     
     batches ||--o{ batch_transactions : "includes"
     batch_transactions }|--|| transactions : "processes"
+```
