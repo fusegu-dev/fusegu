@@ -34,6 +34,15 @@ The schema follows a normalized design with the following principles:
   - Usage tracking and billing cycle management
   - Rate limiting and quota enforcement
 
+### Users (`users`)
+- **Purpose**: Cross-transaction user identity and risk profiling
+- **Key Features**:
+  - User risk scoring and behavioral analysis
+  - Transaction history aggregation
+  - Cross-transaction pattern detection
+  - User verification and flagging system
+  - Comprehensive user metadata storage
+
 ### Transactions (`transactions`)
 - **Purpose**: Core transaction risk assessment records
 - **Key Features**:
@@ -93,6 +102,28 @@ This design allows:
 - A single transaction to have multiple addresses (billing vs shipping)
 - Device/email/card reuse across multiple transactions
 - Efficient querying and analysis of patterns
+
+## Cross-Transaction Risk Analysis
+
+The introduction of the `users` table enables sophisticated cross-transaction risk analysis:
+
+### User-Centric Risk Scoring
+- **Behavioral Pattern Analysis**: Track user behavior across multiple transactions
+- **Velocity Rules**: Detect unusual transaction patterns (frequency, amounts, locations)
+- **Risk Score Evolution**: Monitor how user risk changes over time
+- **Historical Context**: Leverage past transaction outcomes for better predictions
+
+### Multi-Dimensional Risk Factors
+- **Device Consistency**: Analyze device usage patterns across transactions
+- **Address Verification**: Track shipping/billing address changes and patterns
+- **Payment Method Analysis**: Monitor credit card usage and switching patterns
+- **Email Consistency**: Detect email address changes and associated risks
+
+### Advanced Fraud Detection
+- **Account Takeover Detection**: Identify sudden changes in user behavior
+- **Synthetic Identity Detection**: Detect fake identities through cross-referencing
+- **Relationship Mapping**: Understand connections between users, devices, and addresses
+- **Chargeback Prediction**: Use historical data to predict future chargebacks
 
 ## Advanced Features
 
@@ -182,6 +213,8 @@ The design supports horizontal scaling through:
 - **JSONB Flexibility**: Schema evolution without migrations
 - **Caching Layers**: Built-in caching tables for performance
 - **Batch Processing**: Asynchronous processing support
+- **User-Based Partitioning**: Users table enables user-based data partitioning strategies
+- **Cross-Transaction Efficiency**: User relationships reduce query complexity for pattern analysis
 
 ## Future Extensions
 

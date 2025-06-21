@@ -19,6 +19,30 @@ CREATE TABLE accounts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- User management for cross-transaction risk identification
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    external_user_id VARCHAR(255), -- Customer's user ID
+    user_hash VARCHAR(64), -- Hash of user identifier (email, phone, etc.)
+    risk_score DECIMAL(5,2) DEFAULT 0.00,
+    risk_level VARCHAR(20) DEFAULT 'low' CHECK (risk_level IN ('low', 'medium', 'high', 'very_high')),
+    total_transactions INTEGER NOT NULL DEFAULT 0,
+    successful_transactions INTEGER NOT NULL DEFAULT 0,
+    failed_transactions INTEGER NOT NULL DEFAULT 0,
+    chargeback_count INTEGER NOT NULL DEFAULT 0,
+    first_transaction_at TIMESTAMP WITH TIME ZONE,
+    last_transaction_at TIMESTAMP WITH TIME ZONE,
+    is_verified BOOLEAN DEFAULT false,
+    is_flagged BOOLEAN DEFAULT false,
+    flags JSONB DEFAULT '[]', -- Array of flag reasons
+    metadata JSONB DEFAULT '{}', -- Additional user data
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(account_id, external_user_id),
+    UNIQUE(account_id, user_hash)
+);
+
 -- API Keys for authentication
 CREATE TABLE api_keys (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -36,6 +60,7 @@ CREATE TABLE api_keys (
 -- Device fingerprinting and tracking
 CREATE TABLE devices (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Link to user for cross-transaction tracking
     ip_address INET NOT NULL,
     user_agent TEXT,
     accept_language VARCHAR(255),
@@ -53,6 +78,7 @@ CREATE TABLE devices (
 -- Email address analysis
 CREATE TABLE email_addresses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Link to user for cross-transaction tracking
     email_hash VARCHAR(64) UNIQUE NOT NULL, -- MD5 hash of email
     domain VARCHAR(255),
     is_free BOOLEAN DEFAULT false,
@@ -66,6 +92,7 @@ CREATE TABLE email_addresses (
 -- Address information for billing/shipping
 CREATE TABLE addresses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Link to user for cross-transaction tracking
     first_name VARCHAR(255),
     last_name VARCHAR(255),
     company VARCHAR(255),
@@ -87,6 +114,7 @@ CREATE TABLE addresses (
 -- Credit card information
 CREATE TABLE credit_cards (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Link to user for cross-transaction tracking
     issuer_id_number VARCHAR(8), -- BIN (first 6-8 digits)
     last_digits VARCHAR(4), -- Last 2-4 digits
     token_hash VARCHAR(255), -- Hashed token
@@ -110,6 +138,7 @@ CREATE TABLE credit_cards (
 CREATE TABLE transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Link to user for cross-transaction tracking
     external_transaction_id VARCHAR(255), -- Customer's transaction ID
     risk_score DECIMAL(5,2) NOT NULL,
     risk_level VARCHAR(20) NOT NULL CHECK (risk_level IN ('low', 'medium', 'high', 'very_high')),
@@ -282,20 +311,32 @@ CREATE TABLE ip_risk_cache (
 );
 
 -- Indexes for performance
+CREATE INDEX idx_users_account_id ON users(account_id);
+CREATE INDEX idx_users_external_id ON users(external_user_id);
+CREATE INDEX idx_users_user_hash ON users(user_hash);
+CREATE INDEX idx_users_risk_score ON users(risk_score);
+CREATE INDEX idx_users_is_flagged ON users(is_flagged);
+CREATE INDEX idx_users_last_transaction_at ON users(last_transaction_at);
+
 CREATE INDEX idx_transactions_account_id ON transactions(account_id);
+CREATE INDEX idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX idx_transactions_created_at ON transactions(created_at);
 CREATE INDEX idx_transactions_risk_score ON transactions(risk_score);
 CREATE INDEX idx_transactions_external_id ON transactions(external_transaction_id);
 
+CREATE INDEX idx_devices_user_id ON devices(user_id);
 CREATE INDEX idx_devices_ip_address ON devices(ip_address);
 CREATE INDEX idx_devices_last_seen ON devices(last_seen);
 
+CREATE INDEX idx_email_addresses_user_id ON email_addresses(user_id);
 CREATE INDEX idx_email_addresses_domain ON email_addresses(domain);
 CREATE INDEX idx_email_addresses_is_high_risk ON email_addresses(is_high_risk);
 
+CREATE INDEX idx_addresses_user_id ON addresses(user_id);
 CREATE INDEX idx_addresses_country ON addresses(country);
 CREATE INDEX idx_addresses_postal_code ON addresses(postal_code);
 
+CREATE INDEX idx_credit_cards_user_id ON credit_cards(user_id);
 CREATE INDEX idx_credit_cards_issuer_id ON credit_cards(issuer_id_number);
 CREATE INDEX idx_credit_cards_country ON credit_cards(country);
 
@@ -324,6 +365,7 @@ END;
 $$ language 'plpgsql';
 
 CREATE TRIGGER update_accounts_updated_at BEFORE UPDATE ON accounts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_api_keys_updated_at BEFORE UPDATE ON api_keys FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_devices_updated_at BEFORE UPDATE ON devices FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_email_addresses_updated_at BEFORE UPDATE ON email_addresses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

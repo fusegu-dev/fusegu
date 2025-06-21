@@ -13,9 +13,31 @@ erDiagram
         timestamp updated_at
     }
 
+    users {
+        uuid id PK
+        uuid account_id FK
+        string external_user_id
+        string user_hash UK
+        decimal risk_score
+        string risk_level
+        integer total_transactions
+        integer successful_transactions
+        integer failed_transactions
+        integer chargeback_count
+        timestamp first_transaction_at
+        timestamp last_transaction_at
+        boolean is_verified
+        boolean is_flagged
+        jsonb flags
+        jsonb metadata
+        timestamp created_at
+        timestamp updated_at
+    }
+
     transactions {
         uuid id PK
         uuid account_id FK
+        uuid user_id FK
         string external_transaction_id
         decimal risk_score
         string risk_level
@@ -31,6 +53,7 @@ erDiagram
 
     devices {
         uuid id PK
+        uuid user_id FK
         string ip_address
         string user_agent
         string accept_language
@@ -53,6 +76,7 @@ erDiagram
 
     email_addresses {
         uuid id PK
+        uuid user_id FK
         string email_hash UK
         string domain
         boolean is_free
@@ -71,6 +95,7 @@ erDiagram
 
     addresses {
         uuid id PK
+        uuid user_id FK
         string first_name
         string last_name
         string company
@@ -99,6 +124,7 @@ erDiagram
 
     credit_cards {
         uuid id PK
+        uuid user_id FK
         string issuer_id_number
         string last_digits
         string token_hash
@@ -249,11 +275,18 @@ erDiagram
         timestamp updated_at
     }
 
+    accounts ||--o{ users : "contains"
     accounts ||--o{ transactions : "submits"
     accounts ||--o{ batches : "creates"
     accounts ||--o{ webhooks : "owns"
     accounts ||--o{ api_keys : "has"
     accounts ||--o{ rate_limits : "subject_to"
+    
+    users ||--o{ transactions : "performs"
+    users ||--o{ devices : "uses"
+    users ||--o{ email_addresses : "owns"
+    users ||--o{ addresses : "has"
+    users ||--o{ credit_cards : "possesses"
     
     transactions ||--|| transaction_devices : "uses"
     transactions ||--|| transaction_emails : "associated_with"
