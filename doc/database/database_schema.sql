@@ -1,4 +1,4 @@
--- Fusegu Fraud Detection API Database Schema
+-- fusegu Fraud Detection API Database Schema
 -- Based on MinFraud-style transaction risk assessment API
 -- PostgreSQL compatible schema with UUID primary keys
 

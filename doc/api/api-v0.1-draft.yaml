@@ -1,19 +1,23 @@
 openapi: 3.0.4
 info:
-  title: MinFraud Transaction Risk Assessment API
+  title: fusegu Transaction Risk Assessment API
   version: 3.0.0
   description: |
-    A comprehensive RESTful API for transaction fraud detection and risk assessment. 
-    This API provides real-time transaction scoring, detailed insights, and comprehensive 
-    fraud analysis factors to help businesses identify and prevent fraudulent transactions.
+    A comprehensive RESTful API for transaction fraud detection and risk assessment with 
+    advanced user tracking and cross-transaction analysis capabilities. This API provides 
+    real-time transaction scoring, detailed insights, and comprehensive fraud analysis 
+    factors to help businesses identify and prevent fraudulent transactions.
     
     ## Features
     - **Real-time risk scoring**: Get instant fraud probability scores (0.01-99.99)
+    - **User-centric analysis**: Track users across transactions for behavioral pattern detection
+    - **Cross-transaction insights**: Leverage historical user data for improved accuracy
     - **Comprehensive insights**: Detailed geolocation, device, and behavioral analysis
     - **Advanced factors**: In-depth risk analysis with explanations and reasoning
-    - **Webhook notifications**: Receive real-time updates on transaction status changes
+    - **User management**: Create, update, and analyze user profiles and risk patterns
+    - **Webhook notifications**: Receive real-time updates on transaction and user status changes
     - **Batch processing**: Analyze multiple transactions efficiently
-    - **Historical analytics**: Access transaction history and trends
+    - **Historical analytics**: Access transaction history, user trends, and behavioral patterns
     
     ## Authentication
     All API endpoints require authentication using API keys passed in the `Authorization` header 
@@ -75,6 +79,7 @@ paths:
                     type: "purchase"
                     transaction_id: "txn_123456789"
                     time: "2025-06-13T10:30:00Z"
+                  user_id: "user_550e8400-e29b-41d4-a716-446655440001"
                   order:
                     amount: 199.99
                     currency: "USD"
@@ -96,6 +101,7 @@ paths:
                     transaction_id: "txn_987654321"
                     time: "2025-06-13T14:45:30Z"
                     shop_id: "shop_main"
+                  user_id: "user_550e8400-e29b-41d4-a716-446655440000"
                   account:
                     user_id: "user_12345"
                   email:
@@ -664,13 +670,270 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /users:
+    post:
+      operationId: createUser
+      summary: Create a new user profile
+      description: |
+        Create a new user profile for cross-transaction risk tracking and analysis.
+        Users enable behavioral pattern detection and improved risk scoring over time.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            examples:
+              basic_user:
+                summary: Basic user creation
+                value:
+                  external_user_id: "user_12345"
+                  user_hash: "5d41402abc4b2a76b9719d911017c592"
+                  metadata:
+                    registration_date: "2025-06-01"
+                    user_type: "premium"
+              anonymous_user:
+                summary: Anonymous user with hash only
+                value:
+                  user_hash: "098f6bcd4621d373cade4e832627b4f6"
+                  metadata:
+                    source: "mobile_app"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      operationId: listUsers
+      summary: List users
+      description: |
+        Retrieve a paginated list of users. Results can be filtered by risk level,
+        verification status, and other criteria.
+      tags:
+        - Users
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of users to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of users to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: risk_level
+          in: query
+          description: Filter by user risk level
+          schema:
+            type: string
+            enum: [low, medium, high, very_high]
+        - name: is_flagged
+          in: query
+          description: Filter by flagged status
+          schema:
+            type: boolean
+        - name: is_verified
+          in: query
+          description: Filter by verification status
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [created_at, risk_score, last_transaction_at, -created_at, -risk_score, -last_transaction_at]
+            default: -created_at
+      responses:
+        '200':
+          description: List of users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      summary: Get user by ID
+      description: |
+        Retrieve detailed information about a specific user including their
+        risk profile, transaction history summary, and behavioral patterns.
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Unique identifier for the user
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      operationId: updateUser
+      summary: Update user profile
+      description: |
+        Update user profile information, risk settings, or verification status.
+        This endpoint can be used to flag users, update metadata, or change verification status.
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Unique identifier for the user
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/transactions:
+    get:
+      operationId: getUserTransactions
+      summary: Get user transaction history
+      description: |
+        Retrieve all transactions associated with a specific user.
+        Useful for analyzing user behavior patterns and risk evolution over time.
+      tags:
+        - Users
+        - Transactions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Unique identifier for the user
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Maximum number of transactions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of transactions to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: from_date
+          in: query
+          description: Start date for filtering (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to_date
+          in: query
+          description: End date for filtering (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: User transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/{userId}/risk-analysis:
+    get:
+      operationId: getUserRiskAnalysis
+      summary: Get detailed user risk analysis
+      description: |
+        Retrieve comprehensive risk analysis for a user including behavioral patterns,
+        velocity analysis, and cross-transaction risk factors.
+      tags:
+        - Users
+        - Risk Analysis
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: Unique identifier for the user
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User risk analysis retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRiskAnalysis'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /analytics:
     get:
       operationId: getAnalytics
       summary: Get transaction analytics
       description: |
         Retrieve analytics and insights about your transaction patterns,
-        risk distribution, and detection accuracy over time.
+        risk distribution, user behavior trends, and detection accuracy over time.
       tags:
         - Analytics
       parameters:
@@ -688,6 +951,12 @@ paths:
             type: string
             enum: [hour, day, week]
             default: day
+        - name: include_users
+          in: query
+          description: Include user analytics in the response
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: Analytics data retrieved successfully
@@ -728,6 +997,11 @@ components:
           $ref: '#/components/schemas/Device'
         event:
           $ref: '#/components/schemas/Event'
+        user_id:
+          type: string
+          format: uuid
+          description: Existing user ID to associate with this transaction
+          example: "user_550e8400-e29b-41d4-a716-446655440000"
         account:
           $ref: '#/components/schemas/Account'
         email:
@@ -815,7 +1089,7 @@ components:
         user_id:
           type: string
           maxLength: 255
-          description: Unique user identifier in your system
+          description: Unique user identifier in your system (external_user_id)
           example: "user_12345"
         username_md5:
           type: string
@@ -823,6 +1097,11 @@ components:
           pattern: "^[a-f0-9]{32}$"
           description: MD5 hash of username
           example: "5d41402abc4b2a76b9719d911017c592"
+        user_hash:
+          type: string
+          maxLength: 64
+          description: Hash of user identifier (email, phone, etc.) for cross-transaction tracking
+          example: "098f6bcd4621d373cade4e832627b4f6"
 
     Email:
       type: object
@@ -1041,6 +1320,11 @@ components:
           format: uuid
           description: Unique transaction identifier
           example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          format: uuid
+          description: User ID associated with this transaction
+          example: "user_550e8400-e29b-41d4-a716-446655440000"
         risk_score:
           type: number
           minimum: 0.01
@@ -1062,6 +1346,8 @@ components:
           format: date-time
           description: Transaction creation timestamp
           example: "2025-06-13T10:30:00.123Z"
+        user:
+          $ref: '#/components/schemas/UserInfo'
         ip_address:
           $ref: '#/components/schemas/IPAddressInfo'
         funds_remaining:
@@ -1492,9 +1778,9 @@ components:
           type: array
           items:
             type: string
-            enum: [transaction.completed, transaction.updated, batch.completed, account.updated]
+            enum: [transaction.completed, transaction.updated, user.created, user.updated, user.flagged, batch.completed, account.updated]
           description: Events to subscribe to
-          example: ["transaction.completed", "batch.completed"]
+          example: ["transaction.completed", "user.flagged", "batch.completed"]
         secret:
           type: string
           maxLength: 255
@@ -1547,7 +1833,7 @@ components:
           type: array
           items:
             type: string
-            enum: [transaction.completed, transaction.updated, batch.completed, account.updated]
+            enum: [transaction.completed, transaction.updated, user.created, user.updated, user.flagged, batch.completed, account.updated]
         is_active:
           type: boolean
         description:
@@ -1609,6 +1895,9 @@ components:
             total_transactions:
               type: integer
               example: 15642
+            total_users:
+              type: integer
+              example: 3456
             average_risk_score:
               type: number
               example: 12.45
@@ -1627,6 +1916,21 @@ components:
                 very_high:
                   type: integer
                   example: 34
+            user_risk_distribution:
+              type: object
+              properties:
+                low:
+                  type: integer
+                  example: 2856
+                medium:
+                  type: integer
+                  example: 485
+                high:
+                  type: integer
+                  example: 98
+                very_high:
+                  type: integer
+                  example: 17
         time_series:
           type: array
           items:
@@ -1639,6 +1943,9 @@ components:
               transaction_count:
                 type: integer
                 example: 542
+              user_count:
+                type: integer
+                example: 123
               average_risk_score:
                 type: number
                 example: 11.23
@@ -1654,6 +1961,282 @@ components:
                   review:
                     type: integer
                     example: 23
+
+    UserRequest:
+      type: object
+      properties:
+        external_user_id:
+          type: string
+          maxLength: 255
+          description: Your internal user identifier
+          example: "user_12345"
+        user_hash:
+          type: string
+          maxLength: 64
+          description: Hash of user identifier (email, phone, etc.) for privacy
+          example: "5d41402abc4b2a76b9719d911017c592"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional user metadata
+          example:
+            registration_date: "2025-06-01"
+            user_type: "premium"
+            source: "mobile_app"
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "user_550e8400-e29b-41d4-a716-446655440000"
+        external_user_id:
+          type: string
+          description: Your internal user identifier
+          example: "user_12345"
+        user_hash:
+          type: string
+          description: Hash of user identifier
+          example: "5d41402abc4b2a76b9719d911017c592"
+        risk_score:
+          type: number
+          minimum: 0.00
+          maximum: 99.99
+          description: User's current risk score
+          example: 15.42
+        risk_level:
+          type: string
+          enum: [low, medium, high, very_high]
+          description: User's risk level classification
+          example: "low"
+        total_transactions:
+          type: integer
+          description: Total number of transactions by this user
+          example: 45
+        successful_transactions:
+          type: integer
+          description: Number of successful transactions
+          example: 42
+        failed_transactions:
+          type: integer
+          description: Number of failed transactions
+          example: 3
+        chargeback_count:
+          type: integer
+          description: Number of chargebacks attributed to this user
+          example: 0
+        first_transaction_at:
+          type: string
+          format: date-time
+          description: Timestamp of user's first transaction
+          example: "2025-05-15T09:30:00Z"
+        last_transaction_at:
+          type: string
+          format: date-time
+          description: Timestamp of user's most recent transaction
+          example: "2025-06-13T10:30:00Z"
+        is_verified:
+          type: boolean
+          description: Whether the user has been verified
+          example: true
+        is_flagged:
+          type: boolean
+          description: Whether the user has been flagged for review
+          example: false
+        flags:
+          type: array
+          items:
+            type: string
+          description: List of flags associated with the user
+          example: []
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional user metadata
+        created_at:
+          type: string
+          format: date-time
+          description: User creation timestamp
+          example: "2025-05-15T09:25:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2025-06-13T10:30:00Z"
+        _links:
+          $ref: '#/components/schemas/Links'
+
+    UserInfo:
+      type: object
+      description: User information included in transaction responses
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "user_550e8400-e29b-41d4-a716-446655440000"
+        external_user_id:
+          type: string
+          description: Your internal user identifier
+          example: "user_12345"
+        risk_score:
+          type: number
+          minimum: 0.00
+          maximum: 99.99
+          description: User's current risk score
+          example: 15.42
+        risk_level:
+          type: string
+          enum: [low, medium, high, very_high]
+          description: User's risk level classification
+          example: "low"
+        total_transactions:
+          type: integer
+          description: Total number of transactions by this user
+          example: 45
+        is_flagged:
+          type: boolean
+          description: Whether the user has been flagged for review
+          example: false
+
+    UserUpdate:
+      type: object
+      properties:
+        is_verified:
+          type: boolean
+          description: Update user verification status
+        is_flagged:
+          type: boolean
+          description: Update user flag status
+        flags:
+          type: array
+          items:
+            type: string
+          description: Update user flags
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Update user metadata
+
+    UserList:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        _links:
+          $ref: '#/components/schemas/Links'
+
+    UserRiskAnalysis:
+      allOf:
+        - $ref: '#/components/schemas/UserResponse'
+        - type: object
+          properties:
+            behavioral_patterns:
+              type: object
+              properties:
+                transaction_frequency:
+                  type: object
+                  properties:
+                    daily_average:
+                      type: number
+                      example: 2.3
+                    weekly_average:
+                      type: number
+                      example: 16.1
+                    peak_day:
+                      type: string
+                      example: "Monday"
+                    peak_hour:
+                      type: integer
+                      example: 14
+                transaction_amounts:
+                  type: object
+                  properties:
+                    average_amount:
+                      type: number
+                      example: 156.78
+                    median_amount:
+                      type: number
+                      example: 89.99
+                    largest_amount:
+                      type: number
+                      example: 1299.99
+                    amount_variance:
+                      type: number
+                      example: 245.67
+                device_consistency:
+                  type: object
+                  properties:
+                    unique_devices:
+                      type: integer
+                      example: 3
+                    primary_device_usage:
+                      type: number
+                      description: Percentage of transactions from primary device
+                      example: 78.5
+                location_patterns:
+                  type: object
+                  properties:
+                    unique_countries:
+                      type: integer
+                      example: 2
+                    primary_country:
+                      type: string
+                      example: "US"
+                    location_consistency:
+                      type: number
+                      description: Percentage of transactions from primary location
+                      example: 92.1
+            velocity_analysis:
+              type: object
+              properties:
+                transactions_last_24h:
+                  type: integer
+                  example: 2
+                transactions_last_7d:
+                  type: integer
+                  example: 12
+                transactions_last_30d:
+                  type: integer
+                  example: 45
+                amount_last_24h:
+                  type: number
+                  example: 234.56
+                amount_last_7d:
+                  type: number
+                  example: 1567.89
+                amount_last_30d:
+                  type: number
+                  example: 7456.23
+                velocity_flags:
+                  type: array
+                  items:
+                    type: string
+                  example: []
+            cross_transaction_factors:
+              type: array
+              items:
+                type: object
+                properties:
+                  factor_type:
+                    type: string
+                    example: "address_consistency"
+                  factor_value:
+                    type: number
+                    example: 0.95
+                  description:
+                    type: string
+                    example: "User consistently uses same billing address"
+                  risk_impact:
+                    type: string
+                    enum: [positive, negative, neutral]
+                    example: "positive"
 
     ReportResponse:
       type: object
@@ -1907,6 +2490,8 @@ components:
 tags:
   - name: Transactions
     description: Core transaction fraud detection and risk assessment
+  - name: Users
+    description: User profile management and cross-transaction risk analysis
   - name: Insights
     description: Detailed transaction insights and analysis (Pro+ plans)
   - name: Risk Analysis
@@ -1916,8 +2501,8 @@ tags:
   - name: Batch Processing
     description: Process multiple transactions efficiently
   - name: Webhooks
-    description: Real-time notifications for transaction and account events
+    description: Real-time notifications for transaction, user, and account events
   - name: Account
     description: Account management and usage information
   - name: Analytics
-    description: Transaction analytics and insights
+    description: Transaction and user analytics and insights

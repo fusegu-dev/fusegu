@@ -1,4 +1,4 @@
-# Fusegu Database Design
+# fusegu Database Design
 
 This document describes the database schema design for the Fusegu fraud detection API, based on the MinFraud-style transaction risk assessment API specification.
 
