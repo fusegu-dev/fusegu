@@ -8,15 +8,27 @@ repository = "https://github.com/fusegu-dev/fusegu"
 homepage = "https://fusegu.dev"
 
 [dependencies]
-# Web framework
+# Core framework
 axum = { version = "0.8", features = ["http1", "http2", "json", "query", "form", "matched-path", "original-uri", "tracing", "macros"] }
 tokio = { version = "1.45", features = ["macros", "rt-multi-thread", "net", "time", "signal"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "trace", "timeout"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "timeout", "auth"] }
 
-# Serialization
+# Database
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "uuid", "chrono", "json", "migrate"] }
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+
+# Serialization & APIs
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+utoipa = { version = "5.3", features = ["axum_extras", "chrono", "uuid"] }
+utoipa-swagger-ui = { version = "8.0", features = ["axum"] }
+
+# Core utilities
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+rust_decimal = { version = "1.36", features = ["serde"] }
+async-trait = "0.1"
 
 # Configuration and environment
 dotenvy = "0.15"
@@ -29,16 +41,28 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 anyhow = "1.0"
 thiserror = "2.0"
 
-# Time handling
-chrono = { version = "0.4", features = ["serde"] }
+# Security & validation
+argon2 = "0.5"           # Password hashing
+validator = { version = "0.18", features = ["derive"] }
+jsonwebtoken = "9.0"     # JWT tokens
 
-# OpenAPI documentation
-utoipa = { version = "5.3", features = ["axum_extras", "chrono"] }
+# HTTP client for external services
+reqwest = { version = "0.12", features = ["json"] }
 
+# IP address handling
+ipnetwork = "0.20"
 
+# Math and calculations
+ordered-float = "4.0"
+sha2 = "0.10.9"
+rand = "0.9.1"
+regex = "1.11.1"
 
 [dev-dependencies]
 # Testing utilities
+tokio-test = "0.4"
+http-body-util = "0.1"
+tower = { version = "0.5", features = ["util"] }
 
 [profile.dev]
 debug = true
