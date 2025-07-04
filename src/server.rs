@@ -101,9 +101,7 @@ pub async fn create_app(config: Config) -> anyhow::Result<Router> {
         .nest("/v1", api_v1_routes())
         // Root endpoint
         .route("/", get(root_handler))
-        // OpenAPI JSON endpoint
-        .route("/openapi.json", get(serve_openapi))
-        // Swagger UI - merge the SwaggerUi router
+        // Swagger UI - merge the SwaggerUi router (handles /openapi.json internally)
         .merge(SwaggerUi::new("/swagger-ui").url("/openapi.json", ApiDoc::openapi()))
         // Add shared state
         .with_state(config.clone())
@@ -133,21 +131,16 @@ fn api_v1_routes() -> Router<Config> {
         // Transaction endpoints
         .route("/transactions", post(create_transaction))
         .route("/transactions", get(list_transactions))
-        .route("/transactions/:transaction_id", get(get_transaction))
+        .route("/transactions/{transaction_id}", get(get_transaction))
         // User endpoints
         .route("/users", post(create_user))
         .route("/users", get(list_users))
-        .route("/users/:user_id", get(get_user))
-        .route("/users/:user_id", patch(update_user))
+        .route("/users/{user_id}", get(get_user))
+        .route("/users/{user_id}", patch(update_user))
         // Account endpoints
         .route("/account", get(get_account))
         // TODO: Add authentication middleware when implemented
         // .layer(axum::middleware::from_fn_with_state(config.clone(), auth_middleware))
-}
-
-/// Serve OpenAPI specification as JSON
-async fn serve_openapi() -> axum::Json<utoipa::openapi::OpenApi> {
-    axum::Json(ApiDoc::openapi())
 }
 
 /// Root handler
