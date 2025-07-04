@@ -1,7 +1,7 @@
 openapi: 3.0.4
 info:
   title: fusegu Transaction Risk Assessment API
-  version: 3.0.0
+  version: 1.0.0
   description: |
     A comprehensive RESTful API for transaction fraud detection and risk assessment with 
     advanced user tracking and cross-transaction analysis capabilities. This API provides 
@@ -40,11 +40,11 @@ info:
   termsOfService: https://example.com/terms
   
 servers:
-  - url: https://api.minfraud.example.com/v3
+  - url: https://api.minfraud.example.com/v1
     description: Production server
-  - url: https://sandbox.minfraud.example.com/v3
+  - url: https://sandbox.minfraud.example.com/v1
     description: Sandbox server for testing
-  - url: https://eu.api.minfraud.example.com/v3
+  - url: https://eu.api.minfraud.example.com/v1
     description: European production server (GDPR compliant)
 
 security:
@@ -181,11 +181,11 @@ paths:
                     queries_remaining: 485
                     _links:
                       self: 
-                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000"
+                        href: "/v1/transactions/550e8400-e29b-41d4-a716-446655440000"
                       insights:
-                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000/insights"
+                        href: "/v1/transactions/550e8400-e29b-41d4-a716-446655440000/insights"
                       factors:
-                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000/factors"
+                        href: "/v1/transactions/550e8400-e29b-41d4-a716-446655440000/factors"
                 high_risk_response:
                   summary: High risk transaction response
                   value:
@@ -209,13 +209,13 @@ paths:
                         input_path: "/billing/postal"
                     _links:
                       self:
-                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001"
+                        href: "/v1/transactions/550e8400-e29b-41d4-a716-446655440001"
                       insights:
-                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001/insights"
+                        href: "/v1/transactions/550e8400-e29b-41d4-a716-446655440001/insights"
                       factors:
-                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001/factors"
+                        href: "/v1/transactions/550e8400-e29b-41d4-a716-446655440001/factors"
                       report:
-                        href: "/v3/transactions/550e8400-e29b-41d4-a716-446655440001/reports"
+                        href: "/v1/transactions/550e8400-e29b-41d4-a716-446655440001/reports"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1730,7 +1730,7 @@ components:
               properties:
                 href:
                   type: string
-                  example: "/v3/batches/123e4567-e89b-12d3-a456-426614174000"
+                  example: "/v1/batches/123e4567-e89b-12d3-a456-426614174000"
 
     BatchStatus:
       allOf:
@@ -2323,31 +2323,31 @@ components:
           properties:
             href:
               type: string
-              example: "/v3/transactions/550e8400-e29b-41d4-a716-446655440000"
+              example: "/v1/transactions/550e8400-e29b-41d4-a716-446655440000"
         next:
           type: object
           properties:
             href:
               type: string
-              example: "/v3/transactions?offset=20&limit=20"
+              example: "/v1/transactions?offset=20&limit=20"
         prev:
           type: object
           properties:
             href:
               type: string
-              example: "/v3/transactions?offset=0&limit=20"
+              example: "/v1/transactions?offset=0&limit=20"
         first:
           type: object
           properties:
             href:
               type: string
-              example: "/v3/transactions?offset=0&limit=20"
+              example: "/v1/transactions?offset=0&limit=20"
         last:
           type: object
           properties:
             href:
               type: string
-              example: "/v3/transactions?offset=1540&limit=20"
+              example: "/v1/transactions?offset=1540&limit=20"
 
   responses:
     BadRequest:

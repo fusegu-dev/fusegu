@@ -6,7 +6,7 @@ use axum::{
     http::{HeaderValue, Method, header},
     middleware::Next,
     response::Response,
-    routing::get,
+    routing::{get, post, patch},
 };
 use std::time::Duration;
 use tower::ServiceBuilder;
@@ -21,11 +21,14 @@ use crate::{
     api::{
         errors::ErrorResponse,
         health::health_check,
+        transactions::{create_transaction, get_transaction, list_transactions, TransactionListQuery},
+        users::{create_user, get_user, list_users, update_user, UserListQuery},
+        account::get_account,
     },
     auth::middleware::auth_middleware,
     models::{
-        requests::TransactionRequest,
-        responses::TransactionAnalysisResponse,
+        requests::{TransactionRequest, UserRequest, UserUpdate},
+        responses::{TransactionResponse, TransactionList, UserResponse, UserList, AccountInfo},
         health::HealthResponse,
     },
     services::TransactionService,
@@ -37,23 +40,41 @@ use crate::{
 #[openapi(
     paths(
         crate::api::health::health_check,
+        crate::api::transactions::create_transaction,
+        crate::api::transactions::get_transaction,
+        crate::api::transactions::list_transactions,
+        crate::api::users::create_user,
+        crate::api::users::get_user,
+        crate::api::users::list_users,
+        crate::api::users::update_user,
+        crate::api::account::get_account,
     ),
     components(
         schemas(
             TransactionRequest,
-            TransactionAnalysisResponse,
+            TransactionResponse,
+            TransactionList,
+            TransactionListQuery,
+            UserRequest,
+            UserResponse,
+            UserList,
+            UserListQuery,
+            UserUpdate,
+            AccountInfo,
             HealthResponse,
             ErrorResponse,
         )
     ),
     tags(
         (name = "Health", description = "Health check endpoint"),
-        (name = "Transactions", description = "Transaction analysis endpoints"),
+        (name = "Transactions", description = "Transaction fraud detection and risk assessment"),
+        (name = "Users", description = "User profile management and cross-transaction risk analysis"),
+        (name = "Account", description = "Account management and usage information"),
     ),
     info(
         title = "Fusegu API", 
-        version = "0.1.0",
-        description = "Real-time fraud detection and analysis API"
+        version = "1.0.0",
+        description = "A comprehensive RESTful API for transaction fraud detection and risk assessment with advanced user tracking and cross-transaction analysis capabilities."
     )
 )]
 pub struct ApiDoc;
@@ -62,7 +83,7 @@ pub struct ApiDoc;
 pub async fn create_app(config: Config) -> anyhow::Result<Router> {
     // CORS for browser frontend
     let mut cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::POST, Method::PATCH])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE, header::ACCEPT]);
 
     // Add each origin individually
@@ -82,6 +103,8 @@ pub async fn create_app(config: Config) -> anyhow::Result<Router> {
         .route("/", get(root_handler))
         // OpenAPI JSON endpoint
         .route("/openapi.json", get(serve_openapi))
+        // Swagger UI - merge the SwaggerUi router
+        .merge(SwaggerUi::new("/swagger-ui").url("/openapi.json", ApiDoc::openapi()))
         // Add shared state
         .with_state(config.clone())
         // Middleware stack for browser frontend
@@ -104,8 +127,22 @@ pub async fn create_app(config: Config) -> anyhow::Result<Router> {
 
 /// API v1 routes
 fn api_v1_routes() -> Router<Config> {
-    Router::new().route("/health", get(health_check))
-    // Future API endpoints will be added here
+    Router::new()
+        // Health check
+        .route("/health", get(health_check))
+        // Transaction endpoints
+        .route("/transactions", post(create_transaction))
+        .route("/transactions", get(list_transactions))
+        .route("/transactions/:transaction_id", get(get_transaction))
+        // User endpoints
+        .route("/users", post(create_user))
+        .route("/users", get(list_users))
+        .route("/users/:user_id", get(get_user))
+        .route("/users/:user_id", patch(update_user))
+        // Account endpoints
+        .route("/account", get(get_account))
+        // TODO: Add authentication middleware when implemented
+        // .layer(axum::middleware::from_fn_with_state(config.clone(), auth_middleware))
 }
 
 /// Serve OpenAPI specification as JSON
@@ -115,7 +152,7 @@ async fn serve_openapi() -> axum::Json<utoipa::openapi::OpenApi> {
 
 /// Root handler
 async fn root_handler() -> &'static str {
-    "Fusegu API"
+    "Fusegu API v1.0.0 - Transaction Fraud Detection and Risk Assessment"
 }
 
 /// Security headers middleware

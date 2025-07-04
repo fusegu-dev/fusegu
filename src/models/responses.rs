@@ -320,7 +320,6 @@ impl TransactionAnalysisResponse {
             created_at: transaction.created_at,
             links: Links {
                 self_link: None,
-                self_ref: None,
                 next: None,
                 prev: None,
                 first: None,
@@ -328,6 +327,8 @@ impl TransactionAnalysisResponse {
                 insights: None,
                 factors: None,
                 report: None,
+                transactions: None,
+                risk_analysis: None,
             },
         }
     }
@@ -393,7 +394,6 @@ impl UserAnalysisResponse {
             analyzed_at: Utc::now(),
             links: Links {
                 self_link: None,
-                self_ref: None,
                 next: None,
                 prev: None,
                 first: None,
@@ -401,6 +401,8 @@ impl UserAnalysisResponse {
                 insights: None,
                 factors: None,
                 report: None,
+                transactions: None,
+                risk_analysis: None,
             },
         }
     }

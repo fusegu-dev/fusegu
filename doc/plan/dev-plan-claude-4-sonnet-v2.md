@@ -49,7 +49,7 @@ graph TB
 ```
 
 ### Core Features (MVP)
-1. **Transaction Risk Assessment**: Full `POST /v3/transactions` endpoint
+1. **Transaction Risk Assessment**: Full `POST /v1/transactions` endpoint
 2. **User Management**: User creation, lookup, and basic risk profiling
 3. **Cross-Transaction Analysis**: Basic user behavioral patterns
 4. **Multi-tenant Architecture**: Account management with API keys
@@ -137,13 +137,13 @@ pub struct RuleContext<'a> {
 pub struct ApiDoc;
 
 // Key endpoints to implement:
-// POST /v3/transactions - Core transaction scoring
-// GET /v3/transactions/{id} - Transaction lookup
-// GET /v3/transactions - Transaction listing with filters
-// POST /v3/users - User creation
-// GET /v3/users/{id} - User lookup  
-// GET /v3/users - User listing
-// GET /v3/account - Account info
+// POST /v1/transactions - Core transaction scoring
+// GET /v1/transactions/{id} - Transaction lookup
+// GET /v1/transactions - Transaction listing with filters
+// POST /v1/users - User creation
+// GET /v1/users/{id} - User lookup  
+// GET /v1/users - User listing
+// GET /v1/account - Account info
 ```
 
 ### Database Implementation Priority

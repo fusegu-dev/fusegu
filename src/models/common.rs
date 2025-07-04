@@ -107,32 +107,31 @@ pub enum PaymentProcessor {
 }
 
 /// Links for HATEOAS support
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Default)]
 pub struct Links {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub self_link: Option<Link>,
     #[serde(rename = "self", skip_serializing_if = "Option::is_none")]
-    pub self_ref: Option<Link>,
+    pub self_link: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub next: Option<Link>,
+    pub next: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub prev: Option<Link>,
+    pub prev: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub first: Option<Link>,
+    pub first: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub last: Option<Link>,
+    pub last: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub insights: Option<Link>,
+    pub insights: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub factors: Option<Link>,
+    pub factors: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub report: Option<Link>,
+    pub report: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transactions: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub risk_analysis: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct Link {
-    pub href: String,
-}
+
 
 /// Pagination information
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
