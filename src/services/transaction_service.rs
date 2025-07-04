@@ -14,14 +14,14 @@ use crate::scoring::RiskScorer;
 
 pub struct TransactionService {
     db_pool: Arc<DatabasePool>,
-    rule_engine: Arc<RuleEngine>,
+    rule_engine: Arc<std::sync::Mutex<RuleEngine>>,
     risk_scorer: Arc<RiskScorer>,
 }
 
 impl TransactionService {
     pub fn new(
         db_pool: Arc<DatabasePool>,
-        rule_engine: Arc<RuleEngine>,
+        rule_engine: Arc<std::sync::Mutex<RuleEngine>>,
         risk_scorer: Arc<RiskScorer>,
     ) -> Self {
         Self {
@@ -43,17 +43,27 @@ impl TransactionService {
         let device = self.get_or_create_device(&request.device.user_agent).await?;
         
         // Evaluate rules and calculate risk score
-        let rule_results = self.rule_engine.evaluate_transaction(&transaction, &user, &device).await?;
-        let risk_score = self.risk_scorer.calculate_score(&transaction, &user, &device, &rule_results).await?;
+        let feature_store = Arc::new(crate::services::feature_store::RedisFeatureStore::new(
+            Arc::new(crate::database::CacheService::new(self.db_pool.redis().clone())),
+            self.db_pool.clone(),
+        ));
+        
+        let mut rule_engine = self.rule_engine.lock().unwrap();
+        let rule_results = rule_engine.evaluate_transaction(&transaction, &user, &device, feature_store).await?;
+        drop(rule_engine);
+        
+        let risk_score = self.risk_scorer.calculate_risk_score(&transaction, &user, &device, &rule_results).await?;
         
         // Store transaction
         self.store_transaction(&transaction).await?;
         
-        // Build response
+        // Create analysis response
+        let rule_names: Vec<String> = rule_results.hits.iter().map(|hit| hit.rule_name.clone()).collect();
+        
         Ok(TransactionAnalysisResponse::from_analysis(
             transaction,
             risk_score,
-            rule_results,
+            rule_names,
         ))
     }
 

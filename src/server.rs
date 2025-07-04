@@ -11,43 +11,49 @@ use axum::{
 use std::time::Duration;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer};
-use utoipa::OpenApi;
+use utoipa::{
+    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
+    Modify, OpenApi,
+};
+use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{api::health::health_check, config::Config};
+use crate::{
+    api::{
+        errors::ErrorResponse,
+        health::health_check,
+    },
+    auth::middleware::auth_middleware,
+    models::{
+        requests::TransactionRequest,
+        responses::TransactionAnalysisResponse,
+        health::HealthResponse,
+    },
+    services::TransactionService,
+    config::Config,
+};
 
 /// OpenAPI documentation for Fusegu API
 #[derive(OpenApi)]
 #[openapi(
-    info(
-        title = "Fusegu API",
-        version = "0.1.0",
-        description = "Professional REST API built with Rust, Axum, and OpenAPI-first development practices",
-        contact(
-            name = "fusegu.dev",
-            url = "https://fusegu.dev",
-            email = "opensource@fusegu.dev"
-        ),
-        license(
-            name = "AGPL-3.0",
-            url = "https://www.gnu.org/licenses/agpl-3.0.html"
-        )
-    ),
-         servers(
-         (url = "http://localhost:8080", description = "Local development server"),
-         (url = "https://fusegu.io", description = "Production Demo server")
-     ),
     paths(
-        crate::api::health::health_check
+        crate::api::health::health_check,
     ),
     components(
         schemas(
-            crate::models::HealthResponse,
-            crate::api::errors::ErrorResponse,
-            crate::api::errors::ErrorCode
+            TransactionRequest,
+            TransactionAnalysisResponse,
+            HealthResponse,
+            ErrorResponse,
         )
     ),
     tags(
-        (name = "Health", description = "Service health monitoring endpoints")
+        (name = "Health", description = "Health check endpoint"),
+        (name = "Transactions", description = "Transaction analysis endpoints"),
+    ),
+    info(
+        title = "Fusegu API", 
+        version = "0.1.0",
+        description = "Real-time fraud detection and analysis API"
     )
 )]
 pub struct ApiDoc;

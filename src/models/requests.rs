@@ -50,7 +50,7 @@ pub struct DeviceRequest {
     #[validate(length(max = 255))]
     pub session_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[validate(range(min = 0, max = 9999999999999))]
+    #[validate(range(min = 0, max = 2147483647))]
     pub session_age: Option<u64>,
 }
 
@@ -213,7 +213,7 @@ pub struct CartItemRequest {
     pub category: Option<String>,
     #[schema(value_type = f64)]
     pub price: rust_decimal::Decimal,
-    #[validate(range(min = 0, max = 9999999999999))]
+    #[validate(range(min = 0, max = 2147483647))]
     pub quantity: i32,
 }
 

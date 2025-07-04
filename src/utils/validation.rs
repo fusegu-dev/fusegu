@@ -1,11 +1,11 @@
 use anyhow::{anyhow, Result};
 use regex::Regex;
 use std::collections::HashMap;
-use validator::{validate_email, validate_url};
+use validator::{ValidateEmail, ValidateUrl};
 
 /// Validate email address
 pub fn validate_email_address(email: &str) -> Result<()> {
-    if validate_email(email) {
+    if email.validate_email() {
         Ok(())
     } else {
         Err(anyhow!("Invalid email address: {}", email))
@@ -24,7 +24,7 @@ pub fn validate_phone_number(phone: &str) -> Result<()> {
 
 /// Validate URL
 pub fn validate_url_string(url: &str) -> Result<()> {
-    if validate_url(url) {
+    if url.validate_url() {
         Ok(())
     } else {
         Err(anyhow!("Invalid URL: {}", url))

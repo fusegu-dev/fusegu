@@ -2,6 +2,7 @@ use super::{FraudRule, RuleContext, RuleHit, RuleConfig, RulePriority, get_defau
 use anyhow::Result;
 use std::collections::HashMap;
 use tracing::{debug, warn};
+use std::sync::Arc;
 
 /// Rule engine for evaluating fraud rules against transactions
 #[derive(Debug)]
@@ -51,7 +52,7 @@ impl RuleEngine {
     }
 
     /// Create rule engine with custom rules
-    pub fn with_rules(rules: Vec<(FraudRule, RuleConfig)>) -> Self {
+    pub fn with_rules(rules: Vec<(Box<dyn FraudRule>, RuleConfig)>) -> Self {
         Self {
             rules,
             metrics: RuleMetrics::default(),
@@ -140,7 +141,7 @@ impl RuleEngine {
     }
 
     /// Add a new rule to the engine
-    pub fn add_rule(&mut self, rule: FraudRule, config: RuleConfig) {
+    pub fn add_rule(&mut self, rule: Box<dyn FraudRule>, config: RuleConfig) {
         self.rules.push((rule, config));
     }
 
@@ -189,8 +190,51 @@ impl RuleEngine {
         transaction: &crate::models::Transaction,
         user: &crate::models::User,
         device: &crate::models::Device,
+        feature_store: Arc<dyn crate::rules::context::FeatureStore>,
     ) -> Result<RuleEvaluationResult> {
-        let context = RuleContext::new(transaction, user, device);
+        // Convert to the expected types for RuleContext
+        let transaction_request = Arc::new(crate::models::requests::TransactionRequest {
+            device: crate::models::requests::DeviceRequest {
+                ip_address: device.ip_address,
+                user_agent: device.user_agent.clone(),
+                accept_language: device.accept_language.clone(),
+                session_id: device.session_id.clone(),
+                session_age: None,
+            },
+            event: crate::models::requests::EventRequest {
+                event_type: transaction.event_type.clone(),
+                transaction_id: transaction.external_transaction_id.clone(),
+                shop_id: transaction.shop_id.clone(),
+                time: transaction.event_time,
+            },
+            user_id: Some(user.id),
+            account: None,
+            email: None,
+            billing: None,
+            shipping: None,
+            payment: None,
+            credit_card: None,
+            order: Some(crate::models::requests::OrderRequest {
+                amount: transaction.order_amount,
+                currency: transaction.order_currency.clone(),
+                discount_code: transaction.discount_code.clone(),
+                affiliate_id: transaction.affiliate_id.clone(),
+                subaffiliate_id: transaction.subaffiliate_id.clone(),
+                referrer_uri: transaction.referrer_uri.clone(),
+                is_gift: transaction.is_gift,
+                has_gift_message: transaction.has_gift_message,
+            }),
+            shopping_cart: None,
+            custom_inputs: transaction.custom_inputs.clone(),
+        });
+        
+        let context = RuleContext::new(
+            transaction_request,
+            Some(Arc::new(user.clone())),
+            Some(Arc::new(device.clone())),
+            feature_store,
+        );
+        
         self.evaluate(&context).await
     }
 

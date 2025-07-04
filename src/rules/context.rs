@@ -69,7 +69,7 @@ impl RuleContext {
 /// Feature store trait for accessing historical data and computed features
 /// This is the interface between rules and the data layer
 #[async_trait::async_trait]
-pub trait FeatureStore: Send + Sync {
+pub trait FeatureStore: Send + Sync + std::fmt::Debug {
     /// Get user transaction count in the specified time window (hours)
     async fn get_user_transaction_count(&self, user_id: uuid::Uuid, window_hours: u32) -> anyhow::Result<u32>;
     

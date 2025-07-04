@@ -1,51 +1,87 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::sync::Arc;
+use uuid::Uuid;
 
-use crate::database::{DatabasePool, RedisManager};
+use crate::database::{DatabasePool, CacheService};
 use crate::models::{Device, Transaction, User};
+use crate::rules::context::FeatureStore;
 
-#[async_trait]
-pub trait FeatureStore: Send + Sync + std::fmt::Debug {
-    async fn get_user_features(&self, user_id: &str) -> Result<HashMap<String, f64>>;
-    async fn get_device_features(&self, device_id: &str) -> Result<HashMap<String, f64>>;
-    async fn get_transaction_features(&self, transaction: &Transaction) -> Result<HashMap<String, f64>>;
-    async fn update_features(&self, features: HashMap<String, f64>) -> Result<()>;
-}
-
+/// Redis-based feature store implementation
 #[derive(Debug)]
 pub struct RedisFeatureStore {
-    redis: Arc<RedisManager>,
+    redis: Arc<CacheService>,
     db_pool: Arc<DatabasePool>,
 }
 
 impl RedisFeatureStore {
-    pub fn new(redis: Arc<RedisManager>, db_pool: Arc<DatabasePool>) -> Self {
+    pub fn new(redis: Arc<CacheService>, db_pool: Arc<DatabasePool>) -> Self {
         Self { redis, db_pool }
     }
 }
 
 #[async_trait]
 impl FeatureStore for RedisFeatureStore {
-    async fn get_user_features(&self, user_id: &str) -> Result<HashMap<String, f64>> {
-        // Implementation would fetch user features from Redis/DB
-        todo!("Implement user feature retrieval")
+    async fn get_user_transaction_count(&self, user_id: Uuid, window_hours: u32) -> Result<u32> {
+        // TODO: Implement user transaction count lookup
+        todo!("Implement user transaction count lookup")
     }
 
-    async fn get_device_features(&self, device_id: &str) -> Result<HashMap<String, f64>> {
-        // Implementation would fetch device features from Redis/DB
-        todo!("Implement device feature retrieval")
+    async fn get_user_transaction_amount(&self, user_id: Uuid, window_hours: u32) -> Result<f64> {
+        // TODO: Implement user transaction amount lookup
+        todo!("Implement user transaction amount lookup")
     }
 
-    async fn get_transaction_features(&self, transaction: &Transaction) -> Result<HashMap<String, f64>> {
-        // Implementation would calculate/fetch transaction features
-        todo!("Implement transaction feature calculation")
+    async fn get_ip_transaction_count(&self, ip: std::net::IpAddr, window_minutes: u32) -> Result<u32> {
+        // TODO: Implement IP transaction count lookup
+        todo!("Implement IP transaction count lookup")
     }
 
-    async fn update_features(&self, features: HashMap<String, f64>) -> Result<()> {
-        // Implementation would update features in Redis/DB
-        todo!("Implement feature update")
+    async fn get_email_domain_risk(&self, domain: &str) -> Result<f64> {
+        // TODO: Implement email domain risk lookup
+        todo!("Implement email domain risk lookup")
+    }
+
+    async fn is_anonymous_ip(&self, ip: std::net::IpAddr) -> Result<bool> {
+        // TODO: Implement anonymous IP check
+        todo!("Implement anonymous IP check")
+    }
+
+    async fn get_ip_country(&self, ip: std::net::IpAddr) -> Result<Option<String>> {
+        // TODO: Implement IP country lookup
+        todo!("Implement IP country lookup")
+    }
+
+    async fn get_device_transaction_count(&self, device_id: Uuid, window_hours: u32) -> Result<u32> {
+        // TODO: Implement device transaction count lookup
+        todo!("Implement device transaction count lookup")
+    }
+
+    async fn get_address_transaction_count(&self, address_hash: &str, window_hours: u32) -> Result<u32> {
+        // TODO: Implement address transaction count lookup
+        todo!("Implement address transaction count lookup")
+    }
+
+    async fn get_user_average_amount(&self, user_id: Uuid) -> Result<f64> {
+        // TODO: Implement user average amount lookup
+        todo!("Implement user average amount lookup")
+    }
+
+    async fn get_card_bin_transaction_count(&self, bin: &str, window_hours: u32) -> Result<u32> {
+        // TODO: Implement card BIN transaction count lookup
+        todo!("Implement card BIN transaction count lookup")
+    }
+
+    async fn is_prepaid_card(&self, bin: &str) -> Result<bool> {
+        // TODO: Implement prepaid card check
+        todo!("Implement prepaid card check")
+    }
+
+    async fn calculate_distance(&self, lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> Result<f64> {
+        // TODO: Implement distance calculation
+        todo!("Implement distance calculation")
     }
 }
 

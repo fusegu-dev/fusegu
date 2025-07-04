@@ -3,7 +3,7 @@
 use axum::Json;
 
 use super::ApiResult;
-use crate::models::HealthResponse;
+use crate::models::health::HealthResponse;
 
 /// Health check endpoint handler
 #[utoipa::path(

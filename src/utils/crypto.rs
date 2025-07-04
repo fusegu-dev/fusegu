@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::{rand_core::OsRng, SaltString};
 use sha2::{Digest, Sha256};
+use rand::Rng;
 
 /// Hash a password using Argon2
 pub fn hash_password(password: &str) -> Result<String> {
@@ -106,4 +107,19 @@ pub fn generate_card_hash(bin: Option<&str>, last_digits: Option<&str>) -> Strin
     
     let combined = components.join("|");
     sha256_hash(&combined)
+}
+
+/// Generate a cryptographically secure random string
+pub fn generate_secure_random_string(length: usize) -> Result<String> {
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let mut rng = rand::thread_rng();
+    
+    let random_string: String = (0..length)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect();
+    
+    Ok(random_string)
 } 

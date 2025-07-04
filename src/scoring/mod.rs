@@ -189,7 +189,7 @@ pub type RiskScorer = ScoringEngine;
 
 impl ScoringEngine {
     /// Calculate final risk score (simplified interface for services)
-    pub async fn calculate_score(
+    pub async fn calculate_risk_score(
         &self,
         _transaction: &crate::models::Transaction,
         _user: &crate::models::User,

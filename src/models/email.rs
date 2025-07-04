@@ -52,7 +52,7 @@ impl EmailAddress {
 
     /// Calculate email reputation score
     pub fn reputation_score(&self) -> f64 {
-        let mut score: f32 = 80.0; // Start with good reputation
+        let mut score: f64 = 80.0; // Start with good reputation
         
         if self.is_high_risk {
             score -= 40.0;
